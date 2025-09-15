@@ -18,7 +18,8 @@
     "bcryptjs": "^3.0.2",
     "next": "15.5.3",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "react-responsive": "^10.0.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -28,6 +29,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/react-responsive": "^8.0.8",
     "eslint": "^9",
     "eslint-config-next": "15.5.3",
     "prisma": "^6.16.1",
