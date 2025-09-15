@@ -1,7 +1,7 @@
+import prisma from '@/lib/prisma';
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+export const runtime = 'edge'
 
-const prisma = new PrismaClient();
 
 // UPDATE role
 export async function PUT(req: Request, { params }: { params: { id: string } }) {

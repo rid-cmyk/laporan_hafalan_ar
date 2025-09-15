@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -11,6 +13,7 @@
   "dependencies": {
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
     "@prisma/client": "^6.16.1",
+    "@prisma/extension-accelerate": "^2.0.2",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "next": "15.5.3",

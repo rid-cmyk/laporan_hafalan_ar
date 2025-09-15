@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import prisma from '@/lib/prisma';
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
+
 
 // GET all users
 export async function GET() {
@@ -12,7 +12,6 @@ export async function GET() {
       include: { role: true },
     });
 
-    // jangan return password
     const safeUsers = users.map(({ password, ...rest }) => rest);
 
     return NextResponse.json(safeUsers);
