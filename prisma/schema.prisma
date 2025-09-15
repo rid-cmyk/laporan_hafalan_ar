@@ -1,0 +1,290 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+// ===================== ENUMS =====================
+enum Role {
+  admin
+  guru
+  santri
+  ortu
+  yayasan
+}
+
+enum Semester {
+  S1
+  S2
+}
+
+enum StatusHafalan {
+  ziyadah
+  murojaah
+}
+
+enum StatusTarget {
+  belum
+  proses
+  selesai
+}
+
+enum Hari {
+  Senin
+  Selasa
+  Rabu
+  Kamis
+  Jumat
+  Sabtu
+  Minggu
+}
+
+enum StatusAbsensi {
+  alpha
+  izin
+  masuk
+}
+
+enum JenisUjian {
+  tahfidz
+  tasmi
+  lainnya
+}
+
+enum NotifType {
+  user
+  hafalan
+  rapot
+  absensi
+  pengumuman
+}
+
+enum RefType {
+  guru
+  halaqah
+  santri
+}
+
+// ===================== MODELS =====================
+model User {
+  id        Int       @id @default(autoincrement())
+  username  String    @unique
+  password  String
+  role      Role
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  profile   Profile?
+  santri    Santri?
+  ortu      Ortu?
+  guru      Guru?
+  yayasan   Yayasan?
+  notif     Notifikasi[]
+  logs      AuditLog[]
+}
+
+model Profile {
+  id          Int    @id @default(autoincrement())
+  namaLengkap String
+  foto        String?
+  noTlp       String?
+  user        User   @relation(fields: [userId], references: [id])
+  userId      Int @unique
+}
+
+model Santri {
+  id        Int        @id @default(autoincrement())
+  angkatan  String
+  user      User       @relation(fields: [userId], references: [id])
+  userId    Int @unique
+  ortuAnak  OrtuAnak[]
+  halaqah   HalaqahSantri[]
+  hafalan   Hafalan[]
+  target    TargetHafalan[]
+  absensi   Absensi[]
+  prestasi  Prestasi[]
+  ujian     Ujian[]
+}
+
+model Ortu {
+  id       Int       @id @default(autoincrement())
+  user     User      @relation(fields: [userId], references: [id])
+  userId   Int @unique
+  anak     OrtuAnak[]
+}
+
+model OrtuAnak {
+  id      Int    @id @default(autoincrement())
+  ortu    Ortu   @relation(fields: [ortuId], references: [id])
+  ortuId  Int
+  santri  Santri @relation(fields: [santriId], references: [id])
+  santriId Int
+}
+
+model Guru {
+  id       Int       @id @default(autoincrement())
+  user     User      @relation(fields: [userId], references: [id])
+  userId   Int @unique
+  halaqah  Halaqah[]
+}
+
+model Yayasan {
+  id     Int  @id @default(autoincrement())
+  user   User @relation(fields: [userId], references: [id])
+  userId Int @unique
+}
+
+model Halaqah {
+  id          Int            @id @default(autoincrement())
+  namaHalaqah String
+  guru        Guru           @relation(fields: [guruId], references: [id])
+  guruId      Int
+  santri      HalaqahSantri[]
+  jadwal      Jadwal[]
+  ujian       Ujian[]
+}
+
+model HalaqahSantri {
+  id            Int      @id @default(autoincrement())
+  tahunAkademik String
+  semester      Semester
+  halaqah       Halaqah  @relation(fields: [halaqahId], references: [id])
+  halaqahId     Int
+  santri        Santri   @relation(fields: [santriId], references: [id])
+  santriId      Int
+}
+
+model Hafalan {
+  id          Int           @id @default(autoincrement())
+  tanggal     DateTime
+  surat       String
+  ayatMulai   Int
+  ayatSelesai Int
+  status      StatusHafalan
+  keterangan  String?
+  santri      Santri        @relation(fields: [santriId], references: [id])
+  santriId    Int
+}
+
+model TargetHafalan {
+  id         Int          @id @default(autoincrement())
+  surat      String
+  ayatTarget Int
+  deadline   DateTime
+  status     StatusTarget
+  santri     Santri       @relation(fields: [santriId], references: [id])
+  santriId   Int
+}
+
+model Jadwal {
+  id        Int      @id @default(autoincrement())
+  hari      Hari
+  jamMulai  DateTime
+  jamSelesai DateTime
+  halaqah   Halaqah  @relation(fields: [halaqahId], references: [id])
+  halaqahId Int
+  absensi   Absensi[]
+}
+
+model Absensi {
+  id       Int           @id @default(autoincrement())
+  status   StatusAbsensi
+  tanggal  DateTime
+  santri   Santri        @relation(fields: [santriId], references: [id])
+  santriId Int
+  jadwal   Jadwal        @relation(fields: [jadwalId], references: [id])
+  jadwalId Int
+}
+
+model Prestasi {
+  id          Int    @id @default(autoincrement())
+  namaPrestasi String
+  keterangan   String?
+  kategori     String?
+  tahun        Int
+  santri       Santri @relation(fields: [santriId], references: [id])
+  santriId     Int
+}
+
+model Raport {
+  id            Int            @id @default(autoincrement())
+  semester      Semester
+  tahunAkademik String
+  details       RaportDetail[]
+  ujian         Ujian[]
+}
+
+model RaportDetail {
+  id          Int     @id @default(autoincrement())
+  nilaiAkhir  Float
+  catatan     String?
+  tanggalCetak DateTime
+  raport      Raport  @relation(fields: [raportId], references: [id])
+  raportId    Int
+}
+
+model Ujian {
+  id        Int        @id @default(autoincrement())
+  jenis     JenisUjian
+  nilai     Float
+  tanggal   DateTime
+  keterangan String?
+  santri    Santri     @relation(fields: [santriId], references: [id])
+  santriId  Int
+  halaqah   Halaqah    @relation(fields: [halaqahId], references: [id])
+  halaqahId Int
+  raport    Raport     @relation(fields: [raportId], references: [id])
+  raportId  Int
+}
+
+model Notifikasi {
+  id       Int       @id @default(autoincrement())
+  pesan    String
+  tanggal  DateTime  @default(now())
+  type     NotifType
+  refId    Int?
+  user     User      @relation(fields: [userId], references: [id])
+  userId   Int
+}
+
+model Grafik {
+  id         Int     @id @default(autoincrement())
+  tipeGrafik String
+  periode    String
+  dataJson   Json
+  refId      Int?
+  refType    RefType
+}
+
+model Backup {
+  id           Int      @id @default(autoincrement())
+  namaFile     String
+  tanggalBackup DateTime @default(now())
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  action    String
+  keterangan String?
+  tanggal   DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+}
+
+model Pengumuman {
+  id      Int     @id @default(autoincrement())
+  judul   String
+  isi     String
+  tanggal DateTime
+}
