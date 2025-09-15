@@ -7,7 +7,7 @@ import HeaderBar from "./HeaderBar";
 
 const { Content } = Layout;
 
-const LayoutApp: React.FC = () => {
+const LayoutApp: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -31,6 +31,8 @@ const LayoutApp: React.FC = () => {
             borderRadius: borderRadiusLG,
           }}
         >
+          {/* ✅ render our page */}
+          {children}
         </Content>
       </Layout>
     </Layout>
