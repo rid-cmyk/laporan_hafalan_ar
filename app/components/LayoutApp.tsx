@@ -1,39 +1,34 @@
 "use client";
 
 import React, { useState } from "react";
-import { Layout, theme } from "antd";
+import { Layout } from "antd";
 import Sidebar from "./Sidebar";
 import HeaderBar from "./HeaderBar";
-
-const { Content } = Layout;
+import MobileMenu from "./MobileMenu";
+import { useMediaQuery } from "react-responsive";
 
 const LayoutApp: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const {
-    token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken();
+  const isMobile = useMediaQuery({ maxWidth: 768 });
 
-  return (
+  return isMobile ? (
+    <MobileMenu>{children}</MobileMenu>
+  ) : (
     <Layout style={{ minHeight: "100vh" }}>
       <Sidebar collapsed={collapsed} />
       <Layout>
-        <HeaderBar
-          collapsed={collapsed}
-          setCollapsed={setCollapsed}
-          bgColor={colorBgContainer}
-        />
-        <Content
+        <HeaderBar collapsed={collapsed} setCollapsed={setCollapsed} bgColor="white" />
+        <Layout.Content
           style={{
             margin: "24px 16px",
             padding: 24,
             minHeight: 280,
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
+            background: "white",
+            borderRadius: 8,
           }}
         >
-          {/* ✅ render our page */}
           {children}
-        </Content>
+        </Layout.Content>
       </Layout>
     </Layout>
   );
