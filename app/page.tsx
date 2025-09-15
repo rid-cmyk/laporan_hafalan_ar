@@ -1,4 +1,9 @@
 import LayoutApp from "./components/LayoutApp";
+
 export default function Home() {
-  return <LayoutApp />;
+  return (
+    <LayoutApp>
+      <div>Dashboard Content</div>
+    </LayoutApp>
+  );
 }

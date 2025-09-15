@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,17 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-
 // ===================== ENUMS =====================
-enum Role {
-  admin
-  guru
-  santri
-  ortu
-  yayasan
-}
-
 enum Semester {
   S1
   S2
@@ -77,78 +61,55 @@ enum RefType {
 }
 
 // ===================== MODELS =====================
-model User {
-  id        Int       @id @default(autoincrement())
-  username  String    @unique
-  password  String
-  role      Role
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
 
-  profile   Profile?
-  santri    Santri?
-  ortu      Ortu?
-  guru      Guru?
-  yayasan   Yayasan?
-  notif     Notifikasi[]
-  logs      AuditLog[]
+// Master Role
+model Role {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  users User[]
 }
 
-model Profile {
-  id          Int    @id @default(autoincrement())
+// User
+model User {
+  id          Int       @id @default(autoincrement())
+  username    String    @unique
+  password    String
   namaLengkap String
   foto        String?
   noTlp       String?
-  user        User   @relation(fields: [userId], references: [id])
-  userId      Int @unique
+
+  // Relasi ke Role
+  role        Role      @relation(fields: [roleId], references: [id])
+  roleId      Int
+
+  guruHalaqah Halaqah[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // relasi lain
+  notif       Notifikasi[]
+  logs        AuditLog[]
+
+  HalaqahSantri HalaqahSantri[]
+
+  Hafalan Hafalan[]
+
+  TargetHafalan TargetHafalan[]
+
+  Absensi Absensi[]
+
+  Prestasi Prestasi[]
+
+  Ujian Ujian[]
 }
 
-model Santri {
-  id        Int        @id @default(autoincrement())
-  angkatan  String
-  user      User       @relation(fields: [userId], references: [id])
-  userId    Int @unique
-  ortuAnak  OrtuAnak[]
-  halaqah   HalaqahSantri[]
-  hafalan   Hafalan[]
-  target    TargetHafalan[]
-  absensi   Absensi[]
-  prestasi  Prestasi[]
-  ujian     Ujian[]
-}
-
-model Ortu {
-  id       Int       @id @default(autoincrement())
-  user     User      @relation(fields: [userId], references: [id])
-  userId   Int @unique
-  anak     OrtuAnak[]
-}
-
-model OrtuAnak {
-  id      Int    @id @default(autoincrement())
-  ortu    Ortu   @relation(fields: [ortuId], references: [id])
-  ortuId  Int
-  santri  Santri @relation(fields: [santriId], references: [id])
-  santriId Int
-}
-
-model Guru {
-  id       Int       @id @default(autoincrement())
-  user     User      @relation(fields: [userId], references: [id])
-  userId   Int @unique
-  halaqah  Halaqah[]
-}
-
-model Yayasan {
-  id     Int  @id @default(autoincrement())
-  user   User @relation(fields: [userId], references: [id])
-  userId Int @unique
-}
+// ===================== Data Akademik =====================
 
 model Halaqah {
   id          Int            @id @default(autoincrement())
   namaHalaqah String
-  guru        Guru           @relation(fields: [guruId], references: [id])
+  guru        User           @relation(fields: [guruId], references: [id])
   guruId      Int
   santri      HalaqahSantri[]
   jadwal      Jadwal[]
@@ -161,7 +122,7 @@ model HalaqahSantri {
   semester      Semester
   halaqah       Halaqah  @relation(fields: [halaqahId], references: [id])
   halaqahId     Int
-  santri        Santri   @relation(fields: [santriId], references: [id])
+  santri        User     @relation(fields: [santriId], references: [id])
   santriId      Int
 }
 
@@ -173,7 +134,7 @@ model Hafalan {
   ayatSelesai Int
   status      StatusHafalan
   keterangan  String?
-  santri      Santri        @relation(fields: [santriId], references: [id])
+  santri      User          @relation(fields: [santriId], references: [id])
   santriId    Int
 }
 
@@ -183,7 +144,7 @@ model TargetHafalan {
   ayatTarget Int
   deadline   DateTime
   status     StatusTarget
-  santri     Santri       @relation(fields: [santriId], references: [id])
+  santri     User         @relation(fields: [santriId], references: [id])
   santriId   Int
 }
 
@@ -201,19 +162,19 @@ model Absensi {
   id       Int           @id @default(autoincrement())
   status   StatusAbsensi
   tanggal  DateTime
-  santri   Santri        @relation(fields: [santriId], references: [id])
+  santri   User          @relation(fields: [santriId], references: [id])
   santriId Int
   jadwal   Jadwal        @relation(fields: [jadwalId], references: [id])
   jadwalId Int
 }
 
 model Prestasi {
-  id          Int    @id @default(autoincrement())
+  id           Int    @id @default(autoincrement())
   namaPrestasi String
   keterangan   String?
   kategori     String?
   tahun        Int
-  santri       Santri @relation(fields: [santriId], references: [id])
+  santri       User   @relation(fields: [santriId], references: [id])
   santriId     Int
 }
 
@@ -226,27 +187,29 @@ model Raport {
 }
 
 model RaportDetail {
-  id          Int     @id @default(autoincrement())
-  nilaiAkhir  Float
-  catatan     String?
+  id           Int     @id @default(autoincrement())
+  nilaiAkhir   Float
+  catatan      String?
   tanggalCetak DateTime
-  raport      Raport  @relation(fields: [raportId], references: [id])
-  raportId    Int
+  raport       Raport  @relation(fields: [raportId], references: [id])
+  raportId     Int
 }
 
 model Ujian {
-  id        Int        @id @default(autoincrement())
-  jenis     JenisUjian
-  nilai     Float
-  tanggal   DateTime
+  id         Int        @id @default(autoincrement())
+  jenis      JenisUjian
+  nilai      Float
+  tanggal    DateTime
   keterangan String?
-  santri    Santri     @relation(fields: [santriId], references: [id])
-  santriId  Int
-  halaqah   Halaqah    @relation(fields: [halaqahId], references: [id])
-  halaqahId Int
-  raport    Raport     @relation(fields: [raportId], references: [id])
-  raportId  Int
+  santri     User       @relation(fields: [santriId], references: [id])
+  santriId   Int
+  halaqah    Halaqah    @relation(fields: [halaqahId], references: [id])
+  halaqahId  Int
+  raport     Raport     @relation(fields: [raportId], references: [id])
+  raportId   Int
 }
+
+// ===================== Sistem & Notifikasi =====================
 
 model Notifikasi {
   id       Int       @id @default(autoincrement())

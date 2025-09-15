@@ -33,7 +33,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({ collapsed, setCollapsed, bgColor 
         }}
       />
       <div style={{ marginLeft: 16, fontWeight: "bold", fontSize: 18 }}>
-        🚀 Alquran Apps
+        🚀 Ar-Hapalan
       </div>
     </Header>
   );
