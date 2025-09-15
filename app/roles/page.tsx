@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -72,9 +73,14 @@ export default function RolesPage() {
 
   // Delete role
   const handleDelete = async (id: number) => {
-    await fetch(`/api/roles/${id}`, { method: "DELETE" });
-    message.success("Role deleted");
-    fetchRoles();
+    try {
+      const res = await fetch(`/api/roles/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete role");
+      message.success("Role deleted");
+      fetchRoles();
+    } catch (error) {
+      message.error("Error deleting role");
+    }
   };
 
   const columns = [
@@ -97,7 +103,7 @@ export default function RolesPage() {
             Edit
           </Button>
           <Popconfirm
-            title="Are you sure to delete this role?"
+            title="Are you sure want to delete this role?"
             onConfirm={() => handleDelete(record.id)}
             okText="Yes"
             cancelText="No"

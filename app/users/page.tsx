@@ -130,10 +130,14 @@ export default function UsersPage() {
         <Space>
           <Button type="link" onClick={() => openModal(record)}>Edit</Button>
           <Popconfirm
-            title="Are you sure?"
+            title="Are you sure want to delete this user?"
             onConfirm={() => handleDelete(record.id)}
+            okText="Yes"
+            cancelText="No"
           >
-            <Button type="link" danger>Delete</Button>
+            <Button type="link" danger>
+              Delete
+            </Button>
           </Popconfirm>
         </Space>
       ),
