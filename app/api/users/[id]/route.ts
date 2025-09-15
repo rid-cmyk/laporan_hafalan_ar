@@ -6,7 +6,6 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-export const runtime = 'edge';
 
 // UPDATE user
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
@@ -44,7 +43,7 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
     await prisma.user.delete({ where: { id: Number(params.id) } });
     return NextResponse.json({ message: "User deleted" });
   } catch (error) {
-    console.error("DELETE /api/users error:", error);
+    console.error("DELETE /api/users/[id] error:", error);
     return NextResponse.json({ error: "Failed to delete user" }, { status: 500 });
   }
 }
