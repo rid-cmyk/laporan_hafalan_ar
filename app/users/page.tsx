@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -13,7 +12,9 @@ import {
   Popconfirm,
   message,
   Select,
+  Card,
 } from "antd";
+import { useMediaQuery } from "react-responsive";
 import LayoutApp from "../components/LayoutApp";
 
 interface Role {
@@ -37,6 +38,8 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [form] = Form.useForm();
 
+  const isMobile = useMediaQuery({ maxWidth: 768 });
+
   // Fetch users
   const fetchUsers = async () => {
     try {
@@ -45,7 +48,7 @@ export default function UsersPage() {
       if (!res.ok) throw new Error("Failed to fetch users");
       const data = await res.json();
       setUsers(data);
-    } catch (error) {
+    } catch {
       message.error("Error fetching users");
     } finally {
       setLoading(false);
@@ -59,7 +62,7 @@ export default function UsersPage() {
       if (!res.ok) throw new Error("Failed to fetch roles");
       const data = await res.json();
       setRoles(data);
-    } catch (error) {
+    } catch {
       message.error("Error fetching roles");
     }
   };
@@ -69,7 +72,6 @@ export default function UsersPage() {
     fetchRoles();
   }, []);
 
-  // Open modal
   const openModal = (user?: User) => {
     if (user) {
       setEditingUser(user);
@@ -81,11 +83,9 @@ export default function UsersPage() {
     setIsModalOpen(true);
   };
 
-  // Save user
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
-
       const url = editingUser ? `/api/users/${editingUser.id}` : "/api/users";
       const method = editingUser ? "PUT" : "POST";
 
@@ -100,19 +100,18 @@ export default function UsersPage() {
       message.success(editingUser ? "User updated" : "User added");
       setIsModalOpen(false);
       fetchUsers();
-    } catch (error) {
+    } catch {
       message.error("Error saving user");
     }
   };
 
-  // Delete user
   const handleDelete = async (id: number) => {
     try {
       const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete user");
       message.success("User deleted");
       fetchUsers();
-    } catch (error) {
+    } catch {
       message.error("Error deleting user");
     }
   };
@@ -128,7 +127,9 @@ export default function UsersPage() {
       key: "actions",
       render: (_: any, record: User) => (
         <Space>
-          <Button type="link" onClick={() => openModal(record)}>Edit</Button>
+          <Button type="link" onClick={() => openModal(record)}>
+            Edit
+          </Button>
           <Popconfirm
             title="Are you sure want to delete this user?"
             onConfirm={() => handleDelete(record.id)}
@@ -148,21 +149,51 @@ export default function UsersPage() {
     <LayoutApp>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
         <h2>Users Management</h2>
-         <Space>
+        <Space>
           <Button type="primary" onClick={() => openModal()}>
             + Add User
           </Button>
         </Space>
-       
       </div>
 
-      <Table
-        dataSource={users}
-        columns={columns}
-        rowKey="id"
-        loading={loading}
-        bordered
-      />
+      {isMobile ? (
+        // Mobile: render as card list
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {users.map((user) => (
+            <Card
+              key={user.id}
+              size="small"
+              title={user.username}
+              extra={
+                <Space>
+                  <Button type="link" onClick={() => openModal(user)}>
+                    Edit
+                  </Button>
+                  <Popconfirm
+                    title="Are you sure want to delete this user?"
+                    onConfirm={() => handleDelete(user.id)}
+                    okText="Yes"
+                    cancelText="No"
+                  >
+                    <Button type="link" danger>
+                      Delete
+                    </Button>
+                  </Popconfirm>
+                </Space>
+              }
+            >
+              <p><b>Full Name:</b> {user.namaLengkap}</p>
+              {user.noTlp && <p><b>Phone:</b> {user.noTlp}</p>}
+              <p><b>Role:</b> {user.role.name}</p>
+            </Card>
+            
+          ))}
+        </div>
+        
+      ) : (
+        // Desktop: render table
+        <Table dataSource={users} columns={columns} rowKey="id" loading={loading} bordered />
+      )}
 
       <Modal
         title={editingUser ? "Edit User" : "Add User"}
