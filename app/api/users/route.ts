@@ -21,13 +21,26 @@ export async function GET() {
 }
 
 // CREATE user
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const body = await req.json();
+    const body = await request.json();
+    console.log("Creating user with body:", body);
 
     if (!body.username || !body.password || !body.roleId) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Missing required fields: username, password, roleId" },
+        { status: 400 }
+      );
+    }
+
+    // Check if username already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { username: body.username }
+    });
+
+    if (existingUser) {
+      return NextResponse.json(
+        { error: "Username already exists" },
         { status: 400 }
       );
     }
@@ -38,18 +51,22 @@ export async function POST(req: Request) {
       data: {
         username: body.username,
         password: hashedPassword,
-        namaLengkap: body.namaLengkap,
-        noTlp: body.noTlp,
-        roleId: body.roleId,
+        namaLengkap: body.namaLengkap || "",
+        noTlp: body.noTlp || null,
+        roleId: Number(body.roleId),
       },
       include: { role: true },
     });
 
     // filter password
     const { password, ...safeUser } = user;
+    console.log("User created:", safeUser);
     return NextResponse.json(safeUser);
-  } catch (error) {
+  } catch (error: any) {
     console.error("POST /api/users error:", error);
-    return NextResponse.json({ error: "Failed to create user" }, { status: 500 });
+    return NextResponse.json({
+      error: "Failed to create user",
+      details: error.message
+    }, { status: 500 });
   }
 }

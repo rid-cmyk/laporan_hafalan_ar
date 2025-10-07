@@ -7,9 +7,9 @@ import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 // UPDATE user
-export async function PUT(req: NextRequest) {
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const id = req.nextUrl.pathname.split("/").pop(); 
+    const id = params.id;
     if (!id) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
@@ -42,9 +42,9 @@ export async function PUT(req: NextRequest) {
 }
 
 // DELETE user
-export async function DELETE(req: NextRequest) {
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const id = req.nextUrl.pathname.split("/").pop(); // ambil id dari URL
+    const id = params.id;
     if (!id) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }

@@ -8,11 +8,10 @@ import {
   message,
   Space,
   Modal,
-  Form,
-  Input,
+  Upload,
+  Alert,
   Popconfirm,
   Tag,
-  Alert,
 } from "antd";
 import {
   DownloadOutlined,
@@ -20,8 +19,10 @@ import {
   DatabaseOutlined,
   DeleteOutlined,
   ExclamationCircleOutlined,
+  ExportOutlined,
 } from "@ant-design/icons";
 import LayoutApp from "../../components/LayoutApp";
+import type { UploadProps } from "antd";
 
 interface Backup {
   id: number;
@@ -53,6 +54,7 @@ export default function BackupDatabaseSettings() {
     fetchBackups();
   }, []);
 
+  // ================= Backup, Restore, Delete =================
   const handleCreateBackup = async () => {
     try {
       setLoading(true);
@@ -70,7 +72,6 @@ export default function BackupDatabaseSettings() {
 
   const handleDownloadBackup = async (backup: Backup) => {
     try {
-      // In a real implementation, this would download the actual file
       message.info(`Downloading ${backup.namaFile}`);
     } catch {
       message.error("Error downloading backup");
@@ -79,9 +80,7 @@ export default function BackupDatabaseSettings() {
 
   const handleRestoreBackup = async () => {
     if (!selectedBackup) return;
-
     try {
-      // In a real implementation, this would restore from the selected backup
       message.success(`Database restored from ${selectedBackup.namaFile}`);
       setIsRestoreModalOpen(false);
       setSelectedBackup(null);
@@ -92,7 +91,6 @@ export default function BackupDatabaseSettings() {
 
   const handleDeleteBackup = async (id: number) => {
     try {
-      // In a real implementation, this would delete the backup file
       message.success("Backup deleted successfully");
       fetchBackups();
     } catch {
@@ -100,18 +98,56 @@ export default function BackupDatabaseSettings() {
     }
   };
 
+  // ================= Export & Import =================
+  const handleExportData = async () => {
+    try {
+      const res = await fetch("/api/export", { method: "GET" });
+      if (!res.ok) throw new Error("Failed to export data");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `database_export_${new Date().toISOString()}.json`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      message.success("Data exported successfully");
+    } catch {
+      message.error("Error exporting data");
+    }
+  };
+
+  const uploadProps: UploadProps = {
+    name: "file",
+    accept: ".json",
+    showUploadList: false,
+    beforeUpload: (file) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const jsonData = JSON.parse(e.target?.result as string);
+          // Kirim data ke API import sesuai skema
+          const res = await fetch("/api/import", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(jsonData),
+          });
+          if (!res.ok) throw new Error("Failed to import data");
+          message.success("Data imported successfully");
+          fetchBackups();
+        } catch (err) {
+          console.error(err);
+          message.error("Error importing data. Pastikan format JSON sesuai skema!");
+        }
+      };
+      reader.readAsText(file);
+      return false; // prevent auto upload
+    },
+  };
+
+  // ================= Table Columns =================
   const columns = [
-    {
-      title: "ID",
-      dataIndex: "id",
-      key: "id",
-      width: 80,
-    },
-    {
-      title: "File Name",
-      dataIndex: "namaFile",
-      key: "namaFile",
-    },
+    { title: "ID", dataIndex: "id", key: "id", width: 80 },
+    { title: "File Name", dataIndex: "namaFile", key: "namaFile" },
     {
       title: "Date Created",
       dataIndex: "tanggalBackup",
@@ -126,7 +162,7 @@ export default function BackupDatabaseSettings() {
     {
       title: "Actions",
       key: "actions",
-      width: 200,
+      width: 220,
       render: (_: unknown, record: Backup) => (
         <Space size="small">
           <Button
@@ -176,22 +212,33 @@ export default function BackupDatabaseSettings() {
           style={{ marginBottom: 16 }}
         />
 
+        <Space style={{ marginBottom: 16 }} direction="horizontal" size="middle">
+          <Button
+            type="primary"
+            icon={<DatabaseOutlined />}
+            onClick={handleCreateBackup}
+            loading={loading}
+          >
+            Create New Backup
+          </Button>
+
+          <Button type="default" icon={<ExportOutlined />} onClick={handleExportData}>
+            Export Data
+          </Button>
+
+          <Upload {...uploadProps}>
+            <Button type="default" icon={<UploadOutlined />}>
+              Import Data
+            </Button>
+          </Upload>
+        </Space>
+
         <Card
           title={
             <Space>
               <DatabaseOutlined />
               Backup Management
             </Space>
-          }
-          extra={
-            <Button
-              type="primary"
-              icon={<DatabaseOutlined />}
-              onClick={handleCreateBackup}
-              loading={loading}
-            >
-              Create New Backup
-            </Button>
           }
           style={{ marginBottom: 16 }}
         >
@@ -225,10 +272,18 @@ export default function BackupDatabaseSettings() {
           <div style={{ padding: "16px 0" }}>
             <p>Are you sure you want to restore the database from this backup?</p>
             {selectedBackup && (
-              <div style={{ background: "#f6f6f6", padding: 12, borderRadius: 4, marginTop: 8 }}>
+              <div
+                style={{
+                  background: "#f6f6f6",
+                  padding: 12,
+                  borderRadius: 4,
+                  marginTop: 8,
+                }}
+              >
                 <strong>File:</strong> {selectedBackup.namaFile}
                 <br />
-                <strong>Date:</strong> {new Date(selectedBackup.tanggalBackup).toLocaleString()}
+                <strong>Date:</strong>{" "}
+                {new Date(selectedBackup.tanggalBackup).toLocaleString()}
               </div>
             )}
             <Alert

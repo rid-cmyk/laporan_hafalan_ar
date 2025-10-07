@@ -23,9 +23,9 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
   const pathname = usePathname();
 
   const getSelectedKey = () => {
-    if (pathname === "/") return "1";
-    if (pathname.startsWith("/users")) return "2-1";
-    if (pathname.startsWith("/roles")) return "2-2";
+    if (pathname === "/" || pathname.startsWith("/super-admin")) return "1";
+    if (pathname.startsWith("/users")) return "2";
+    if (pathname.startsWith("/settings")) return "3";
     return "";
   };
 
@@ -61,29 +61,31 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
           {
             key: "1",
             icon: <DashboardOutlined />,
-            label: <Link href="/">Dashboard</Link>,
+            label: <Link href="/super-admin">Dashboard</Link>,
           },
           {
             key: "2",
             icon: <UserOutlined />,
-            label: "User",
-            children: [
-              {
-                key: "2-1",
-                icon: <PlusOutlined />,
-                label: <Link href="/users">Add Users</Link>,
-              },
-              {
-                key: "2-2",
-                icon: <TeamOutlined />,
-                label: <Link href="/roles">Add Roles</Link>,
-              },
-            ],
+            label: <Link href="/users">Users</Link>,
           },
           {
             key: "3",
             icon: <SettingFilled />,
-            label: <Link href="/settings">Settings</Link>,
+            label: "Settings",
+            children: [
+              {
+                key: "3-1",
+                label: <Link href="/settings/raport">Raport</Link>,
+              },
+              {
+                key: "3-2",
+                label: <Link href="/settings/tahun-ajaran">Tahun Ajaran</Link>,
+              },
+              {
+                key: "3-3",
+                label: <Link href="/settings/backup-database">Backup Database</Link>,
+              },
+            ],
           }
         ]}
       />
