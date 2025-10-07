@@ -1,9 +1,5 @@
-import LayoutApp from "./components/LayoutApp";
+import { redirect } from 'next/navigation';
 
 export default function Home() {
-  return (
-    <LayoutApp>
-      <div>Dashboard Content</div>
-    </LayoutApp>
-  );
+  redirect('/super-admin');
 }
