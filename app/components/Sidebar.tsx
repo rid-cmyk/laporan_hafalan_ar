@@ -78,68 +78,68 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
         items={
           isAdminSection
             ? [
-                {
-                  key: "4-1",
-                  icon: <DashboardOutlined />,
-                  label: <Link href="/admin/dashboard">Dashboard</Link>,
-                },
-                {
-                  key: "4-2",
-                  icon: <TeamOutlined />,
-                  label: <Link href="/admin/halaqah">Halaqah</Link>,
-                },
-                {
-                  key: "4-3",
-                  icon: <CalendarOutlined />,
-                  label: <Link href="/admin/jadwal">Jadwal</Link>,
-                },
-                {
-                  key: "4-4",
-                  icon: <NotificationOutlined />,
-                  label: <Link href="/admin/pengumuman">Pengumuman</Link>,
-                },
-                {
-                  key: "4-5",
-                  icon: <BarChartOutlined />,
-                  label: <Link href="/admin/laporan">Laporan</Link>,
-                },
-                {
-                  key: "4-6",
-                  icon: <SettingFilled />,
-                  label: <Link href="/admin/settings">Settings</Link>,
-                },
-              ]
+              {
+                key: "4-1",
+                icon: <DashboardOutlined />,
+                label: <Link href="/admin/dashboard">Dashboard</Link>,
+              },
+              {
+                key: "4-2",
+                icon: <TeamOutlined />,
+                label: <Link href="/admin/halaqah">Halaqah</Link>,
+              },
+              {
+                key: "4-3",
+                icon: <CalendarOutlined />,
+                label: <Link href="/admin/jadwal">Jadwal</Link>,
+              },
+              {
+                key: "4-4",
+                icon: <NotificationOutlined />,
+                label: <Link href="/admin/pengumuman">Pengumuman</Link>,
+              },
+              {
+                key: "4-5",
+                icon: <BarChartOutlined />,
+                label: <Link href="/admin/laporan">Laporan</Link>,
+              },
+              {
+                key: "4-6",
+                icon: <SettingFilled />,
+                label: <Link href="/admin/settings">Settings</Link>,
+              },
+            ]
             : [
-                {
-                  key: "1",
-                  icon: <DashboardOutlined />,
-                  label: <Link href="/super-admin">Dashboard</Link>,
-                },
-                {
-                  key: "2",
-                  icon: <UserOutlined />,
-                  label: <Link href="/users">Users</Link>,
-                },
-                {
-                  key: "3",
-                  icon: <SettingFilled />,
-                  label: "Settings",
-                  children: [
-                    {
-                      key: "3-1",
-                      label: <Link href="/settings/raport">Raport</Link>,
-                    },
-                    {
-                      key: "3-2",
-                      label: <Link href="/settings/tahun-ajaran">Tahun Ajaran</Link>,
-                    },
-                    {
-                      key: "3-3",
-                      label: <Link href="/settings/backup-database">Backup Database</Link>,
-                    },
-                  ],
-                },
-              ]
+              {
+                key: "1",
+                icon: <DashboardOutlined />,
+                label: <Link href="/super-admin">Dashboard</Link>,
+              },
+              {
+                key: "2",
+                icon: <UserOutlined />,
+                label: <Link href="/users">Users</Link>,
+              },
+              {
+                key: "3",
+                icon: <SettingFilled />,
+                label: "Settings",
+                children: [
+                  {
+                    key: "3-1",
+                    label: <Link href="/settings/raport">Raport</Link>,
+                  },
+                  {
+                    key: "3-2",
+                    label: <Link href="/settings/tahun-ajaran">Tahun Ajaran</Link>,
+                  },
+                  {
+                    key: "3-3",
+                    label: <Link href="/settings/backup-database">Backup Database</Link>,
+                  },
+                ],
+              },
+            ]
         }
       />
 
