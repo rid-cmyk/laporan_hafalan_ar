@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Children, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -45,7 +45,23 @@ const menuItems = [
     key: "3",
     icon: <SettingFilled />,
     label: "Settings",
-    link: "/settings",
+    children: [
+      { key: "3-1", 
+        icon: <SettingFilled />, 
+        label: "Settings",
+        link: "/settings"
+      },
+      { key: "3-2",
+        icon: <SettingFilled />, 
+        label: "Tahun Ajaran", 
+        link: "/settings/tahun-ajaran" 
+      },
+      { key: "3-3", 
+        icon: <SettingFilled />, 
+        label: "Backup Database", 
+        link: "/settings/backup-database" 
+      },
+    ],
   },
 ];
 
