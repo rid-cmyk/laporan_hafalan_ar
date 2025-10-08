@@ -101,6 +101,9 @@ export default function SuperAdminDashboard() {
   };
 
   const totalUsers = users.length;
+  const totalSantri = getUserCountByRole("santri");
+  const totalGuru = getUserCountByRole("guru");
+  const totalAdmin = getUserCountByRole("admin");
 
   // Calculate hafalan completion rate (placeholder)
   const hafalanCompleted = hafalan.filter((h) => h.status === "selesai").length;
@@ -132,21 +135,36 @@ export default function SuperAdminDashboard() {
               />
             </Card>
           </Col>
-          {roles.map((role, index) => {
-            const colors = ["#1890ff", "#722ed1", "#eb2f96", "#52c41a", "#faad14", "#f5222d"];
-            return (
-              <Col xs={24} sm={12} md={4} key={role.id}>
-                <Card>
-                  <Statistic
-                    title={role.name}
-                    value={getUserCountByRole(role.name.toLowerCase())}
-                    prefix={<TeamOutlined />}
-                    valueStyle={{ color: colors[index % colors.length] }}
-                  />
-                </Card>
-              </Col>
-            );
-          })}
+          <Col xs={24} sm={12} md={4}>
+            <Card>
+              <Statistic
+                title="Santri"
+                value={totalSantri}
+                prefix={<TeamOutlined />}
+                valueStyle={{ color: "#1890ff" }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={4}>
+            <Card>
+              <Statistic
+                title="Guru"
+                value={totalGuru}
+                prefix={<TeamOutlined />}
+                valueStyle={{ color: "#722ed1" }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={4}>
+            <Card>
+              <Statistic
+                title="Admin"
+                value={totalAdmin}
+                prefix={<TeamOutlined />}
+                valueStyle={{ color: "#eb2f96" }}
+              />
+            </Card>
+          </Col>
           <Col xs={24} sm={12} md={4}>
             <Card>
               <Statistic
