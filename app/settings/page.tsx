@@ -11,12 +11,12 @@ export default function SettingsPage() {
         <h1>Settings</h1>
         <p>Manage your account settings here.</p>
       </div>
+
       <div style={{ padding: "24px 0" }}>
         <h1>Settings</h1>
         <p style={{ marginBottom: 24, color: "#666" }}>
           Configure system settings and manage data backups
         </p>
-
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
           <Card
             title={
@@ -67,7 +67,6 @@ export default function SettingsPage() {
           </Card>
         </Space>
         <p>wbdwdbjdwbd</p>
-
       </div>
     </LayoutApp>
   );
