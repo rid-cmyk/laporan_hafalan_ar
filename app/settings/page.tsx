@@ -6,6 +6,7 @@ import LayoutApp from "../components/LayoutApp";
 export default function SettingsPage() {
   return (
     <LayoutApp>
+
       <div>
         <title>Settings</title>
         <h1>Settings</h1>
@@ -66,7 +67,7 @@ export default function SettingsPage() {
             <p>Create, download, and restore database backups for data safety.</p>
           </Card>
         </Space>
-        <p>wbdwdbjdwbd</p>
+
       </div>
     </LayoutApp>
   );
