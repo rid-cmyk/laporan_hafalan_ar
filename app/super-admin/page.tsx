@@ -14,6 +14,7 @@ import LayoutApp from "../components/LayoutApp";
 interface Role {
   id: number;
   name: string;
+  userCount?: number;
 }
 
 interface User {
@@ -36,6 +37,7 @@ interface Absensi {
 
 export default function SuperAdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [hafalan, setHafalan] = useState<Hafalan[]>([]);
   const [absensi, setAbsensi] = useState<Absensi[]>([]);
   const [loading, setLoading] = useState(false);
@@ -52,6 +54,17 @@ export default function SuperAdminDashboard() {
       // Handle error silently for dashboard
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRoles = async () => {
+    try {
+      const res = await fetch("/api/roles");
+      if (!res.ok) throw new Error("Failed to fetch roles");
+      const data = await res.json();
+      setRoles(data);
+    } catch {
+      // Handle error silently for dashboard
     }
   };
 
@@ -77,6 +90,7 @@ export default function SuperAdminDashboard() {
 
   useEffect(() => {
     fetchUsers();
+    fetchRoles();
     fetchHafalan();
     fetchAbsensi();
   }, []);
@@ -87,9 +101,6 @@ export default function SuperAdminDashboard() {
   };
 
   const totalUsers = users.length;
-  const totalSantri = getUserCountByRole("santri");
-  const totalGuru = getUserCountByRole("guru");
-  const totalAdmin = getUserCountByRole("admin");
 
   // Calculate hafalan completion rate (placeholder)
   const hafalanCompleted = hafalan.filter((h) => h.status === "selesai").length;
@@ -121,36 +132,21 @@ export default function SuperAdminDashboard() {
               />
             </Card>
           </Col>
-          <Col xs={24} sm={12} md={4}>
-            <Card>
-              <Statistic
-                title="Santri"
-                value={totalSantri}
-                prefix={<TeamOutlined />}
-                valueStyle={{ color: "#1890ff" }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={4}>
-            <Card>
-              <Statistic
-                title="Guru"
-                value={totalGuru}
-                prefix={<TeamOutlined />}
-                valueStyle={{ color: "#722ed1" }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={4}>
-            <Card>
-              <Statistic
-                title="Admin"
-                value={totalAdmin}
-                prefix={<TeamOutlined />}
-                valueStyle={{ color: "#eb2f96" }}
-              />
-            </Card>
-          </Col>
+          {roles.map((role, index) => {
+            const colors = ["#1890ff", "#722ed1", "#eb2f96", "#52c41a", "#faad14", "#f5222d"];
+            return (
+              <Col xs={24} sm={12} md={4} key={role.id}>
+                <Card>
+                  <Statistic
+                    title={role.name}
+                    value={getUserCountByRole(role.name.toLowerCase())}
+                    prefix={<TeamOutlined />}
+                    valueStyle={{ color: colors[index % colors.length] }}
+                  />
+                </Card>
+              </Col>
+            );
+          })}
           <Col xs={24} sm={12} md={4}>
             <Card>
               <Statistic

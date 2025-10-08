@@ -54,6 +54,7 @@ export default function UsersPage() {
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [userForm] = Form.useForm();
   const [roleForm] = Form.useForm();
+  const [roleDuplicateWarning, setRoleDuplicateWarning] = useState("");
 
   const isMobile = useMediaQuery({ maxWidth: 768 });
 
@@ -221,6 +222,7 @@ export default function UsersPage() {
       setEditingRole(null);
       roleForm.resetFields();
     }
+    setRoleDuplicateWarning("");
     setIsRoleModalOpen(true);
   };
 
@@ -604,7 +606,27 @@ export default function UsersPage() {
               name="name"
               rules={[{ required: true, message: "Please enter role name" }]}
             >
-              <Input placeholder="Enter role name" />
+              <Input
+                placeholder="Enter role name"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  const normalized = value.trim().charAt(0).toUpperCase() + value.trim().slice(1).toLowerCase();
+                  const existing = roles.find(role =>
+                    role.name.toLowerCase() === normalized.toLowerCase() &&
+                    (!editingRole || role.id !== editingRole.id)
+                  );
+                  if (existing) {
+                    setRoleDuplicateWarning("Role sudah ada. Gunakan nama lain.");
+                  } else {
+                    setRoleDuplicateWarning("");
+                  }
+                }}
+              />
+              {roleDuplicateWarning && (
+                <div style={{ color: 'red', fontSize: '12px', marginTop: '4px' }}>
+                  {roleDuplicateWarning}
+                </div>
+              )}
             </Form.Item>
           </Form>
         </Modal>
