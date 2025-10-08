@@ -6,11 +6,13 @@ import LayoutApp from "../components/LayoutApp";
 export default function SettingsPage() {
   return (
     <LayoutApp>
+
       <div>
         <title>Settings</title>
         <h1>Settings</h1>
         <p>Manage your account settings here.</p>
       </div>
+
       <div style={{ padding: "24px 0" }}>
         <h1>Settings</h1>
         <p style={{ marginBottom: 24, color: "#666" }}>
@@ -66,8 +68,6 @@ export default function SettingsPage() {
             <p>Create, download, and restore database backups for data safety.</p>
           </Card>
         </Space>
-        <p>wbdwdbjdwbd</p>
-
       </div>
     </LayoutApp>
   );

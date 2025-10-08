@@ -21,38 +21,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const roleId = Number(id);
 
     // Check for case-insensitive duplicate (excluding current role)
-    const upperCaseCheck = await prisma.role.findFirst({
-      where: {
-        name: normalizedName.toUpperCase(),
-        id: { not: roleId }
-      }
-    });
-    if (upperCaseCheck) {
-      return NextResponse.json({
-        error: `Role "${normalizedName}" sudah ada. Gunakan nama lain.`
-      }, { status: 400 });
-    }
-
-    const lowerCaseCheck = await prisma.role.findFirst({
-      where: {
-        name: normalizedName.toLowerCase(),
-        id: { not: roleId }
-      }
-    });
-    if (lowerCaseCheck) {
-      return NextResponse.json({
-        error: `Role "${normalizedName}" sudah ada. Gunakan nama lain.`
-      }, { status: 400 });
-    }
-
-    // Also check exact match
-    const exactCheck = await prisma.role.findFirst({
-      where: {
-        name: normalizedName,
-        id: { not: roleId }
-      }
-    });
-    if (exactCheck) {
+    const existingRoles = await prisma.$queryRaw<Array<{ id: number; name: string }>>`
+      SELECT id, name FROM "Role" WHERE LOWER(name) = LOWER(${normalizedName}) AND id != ${roleId}
+    `;
+    if (existingRoles.length > 0) {
       return NextResponse.json({
         error: `Role "${normalizedName}" sudah ada. Gunakan nama lain.`
       }, { status: 400 });
