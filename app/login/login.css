@@ -1,0 +1,130 @@
+.login-container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(ellipse at center, #0a0f2c 0%, #000 100%);
+  overflow: hidden;
+  position: relative;
+}
+
+/* 🪐 Floating Planet */
+.planet {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(circle, #1e3c72, #2a5298);
+  border-radius: 50%;
+  box-shadow: 0 0 60px rgba(42, 82, 152, 0.8),
+              0 0 100px rgba(42, 82, 152, 0.6) inset;
+  animation: float 6s ease-in-out infinite;
+  z-index: 0;
+}
+
+/* 🌟 Stars background */
+.stars,
+.stars2 {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  z-index: 0;
+}
+
+.stars {
+  background-image: radial-gradient(2px 2px at 20px 30px, white, transparent),
+                    radial-gradient(2px 2px at 100px 150px, white, transparent),
+                    radial-gradient(1px 1px at 250px 80px, white, transparent),
+                    radial-gradient(1px 1px at 300px 300px, white, transparent);
+  animation: moveStars 60s linear infinite;
+}
+
+.stars2 {
+  background-image: radial-gradient(1px 1px at 50px 50px, #b0c4de, transparent),
+                    radial-gradient(1px 1px at 200px 200px, #b0c4de, transparent),
+                    radial-gradient(2px 2px at 400px 100px, #b0c4de, transparent);
+  animation: moveStars 120s linear infinite;
+}
+
+/* 🌙 Login Card */
+.login-card {
+  position: relative;
+  z-index: 10;
+  width: 350px;
+  padding: 30px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  text-align: center;
+  color: white;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+.title {
+  font-size: 26px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 14px;
+  opacity: 0.8;
+  margin-bottom: 24px;
+}
+
+/* 🔐 Input & Button */
+.passcode-input {
+  margin-bottom: 20px;
+  text-align: center;
+  letter-spacing: 4px;
+  font-size: 20px;
+  border-radius: 12px;
+}
+
+.login-button {
+  background: linear-gradient(90deg, #1e3c72, #2a5298);
+  border: none;
+  border-radius: 12px;
+  font-weight: bold;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.footer {
+  position: absolute;
+  bottom: 20px;
+  width: 100%;
+  text-align: center;
+  color: #b0c4de;
+  font-size: 18px;
+  font-family: "Scheherazade New", serif;
+  letter-spacing: 2px;
+}
+
+/* 🌟 Floating & moving animations */
+@keyframes float {
+  0% {
+    transform: translate(-50%, 0px);
+  }
+  50% {
+    transform: translate(-50%, -20px);
+  }
+  100% {
+    transform: translate(-50%, 0px);
+  }
+}
+
+@keyframes moveStars {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-1000px);
+  }
+}
