@@ -29,7 +29,7 @@ export async function POST(req: Request) {
       role: user.role.name,
     })
       .setProtectedHeader({ alg: "HS256" })
-      .setExpirationTime("1d")
+      .setExpirationTime("10m")
       .sign(secret);
 
     // ✅ Set cookie
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
       sameSite: "strict",
       secure: process.env.NODE_ENV === "production",
       path: "/",
-      maxAge: 60 * 60 * 24, // 1 day
+      maxAge: 60 * 10, // 10 minutes
     });
 
     return res;
