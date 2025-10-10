@@ -14,7 +14,6 @@ import LayoutApp from "../../components/LayoutApp";
 interface Role {
   id: number;
   name: string;
-  userCount?: number;
 }
 
 interface User {
@@ -37,7 +36,6 @@ interface Absensi {
 
 export default function SuperAdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
   const [hafalan, setHafalan] = useState<Hafalan[]>([]);
   const [absensi, setAbsensi] = useState<Absensi[]>([]);
   const [loading, setLoading] = useState(false);
@@ -54,17 +52,6 @@ export default function SuperAdminDashboard() {
       // Handle error silently for dashboard
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchRoles = async () => {
-    try {
-      const res = await fetch("/api/roles");
-      if (!res.ok) throw new Error("Failed to fetch roles");
-      const data = await res.json();
-      setRoles(data);
-    } catch {
-      // Handle error silently for dashboard
     }
   };
 
@@ -90,7 +77,6 @@ export default function SuperAdminDashboard() {
 
   useEffect(() => {
     fetchUsers();
-    fetchRoles();
     fetchHafalan();
     fetchAbsensi();
   }, []);
