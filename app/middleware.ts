@@ -32,5 +32,8 @@ export function middleware(req: NextRequest) {
 
 // ✅ Protect only dashboard routes
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: [
+    "/dashboard/:path*"
+
+  ],
 };

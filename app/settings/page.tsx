@@ -1,9 +1,39 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import jwt from "jsonwebtoken";
 import { Card, Space, Button } from "antd";
 import { FileTextOutlined, CalendarOutlined, DatabaseOutlined } from "@ant-design/icons";
 import Link from "next/link";
 import LayoutApp from "../components/LayoutApp";
 
-export default function SettingsPage() {
+const JWT_SECRET = process.env.JWT_SECRET || "mysecretkey";
+
+export default async function SettingsPage() {
+  // 🧠 Read token from cookies
+  const cookieStore = cookies();
+  const token = (await cookieStore).get("auth_token")?.value;
+
+  // 🚫 If no token → redirect to login
+  if (!token) {
+    redirect("/login");
+  }
+
+  let decoded: any;
+  try {
+    decoded = jwt.verify(token, JWT_SECRET);
+  } catch (err) {
+    console.error("JWT invalid:", err);
+    redirect("/login");
+  }
+
+  // 🧩 Allow only super_admin & admin
+  const allowedRoles = ["super_admin", "admin"];
+  if (!allowedRoles.includes(decoded.role)) {
+    redirect("/unauthorized");
+  }
+
+  // ✅ If role is allowed, show page
   return (
     <LayoutApp>
       <div>
@@ -66,8 +96,10 @@ export default function SettingsPage() {
             <p>Create, download, and restore database backups for data safety.</p>
           </Card>
         </Space>
-        <p>wbdwdbjdwbd</p>
 
+        <p style={{ marginTop: 40, textAlign: "center", color: "#888" }}>
+          Hanya dapat diakses oleh Admin dan Super Admin
+        </p>
       </div>
     </LayoutApp>
   );

@@ -29,10 +29,18 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
     return "";
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    router.push("/login");
-  };
+  const handleLogout = async () => {
+  try {
+    const res = await fetch("/api/logout", { method: "POST" });
+    if (res.ok) {
+      router.push("/login");
+    } else {
+      console.error("Logout failed:", await res.text());
+    }
+  } catch (err) {
+    console.error("Logout error:", err);
+  }
+};
 
   return (
     <Sider
