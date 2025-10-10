@@ -1,37 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌙 Laporan Hafalan Ar
 
-## Getting Started
+Aplikasi **Laporan Hafalan Ar** adalah sistem berbasis web yang dibuat menggunakan **Next.js 14 (App Router)**.  
+Aplikasi ini digunakan untuk **mencatat, memantau, dan melaporkan progres hafalan Al-Qur’an santri**, dengan fitur login berbasis *passcode* dan dashboard sesuai peran (guru, siswa, orang tua, admin).
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🚀 Fitur Utama
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- 🔐 **Login menggunakan Passcode**
+  - Setiap pengguna memiliki kode unik untuk akses.
+  - Validasi menggunakan JWT yang aman (HttpOnly cookie).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- 🧭 **Dashboard Berdasarkan Role**
+  - **Admin** – kelola data user & hafalan.
+  - **Guru** – catat dan nilai hafalan santri.
+  - **Orang Tua** – pantau progres anak.
+  - **Siswa** – lihat hasil hafalan pribadi.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- 🕐 **Sesi Otomatis Kadaluarsa**
+  - Cookie dan token otomatis expired setelah 10 menit tidak aktif (auto logout).
 
-## Learn More
+- 🕌 **Jadwal Hafalan**
+  - Santri dapat melihat jadwal hafalan mingguan yang sudah diatur.
 
-To learn more about Next.js, take a look at the following resources:
+- 📱 **Notifikasi Mobile (Opsional)**
+  - Dapat terhubung ke WhatsApp atau Telegram untuk mengirim pengingat jadwal hafalan.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🧩 Teknologi yang Digunakan
 
-## Deploy on Vercel
+| Kebutuhan | Teknologi |
+|------------|------------|
+| Frontend Framework | [Next.js 15 (App Router)](https://nextjs.org) |
+| UI & Animasi | [Ant Design](https://ant.design) + [Framer Motion](https://www.framer.com/motion/) |
+| Database | [Prisma ORM](https://www.prisma.io) + PostgreSQL |
+| Autentikasi | [JOSE (JWT)](https://github.com/panva/jose) – bekerja di Edge Runtime |
+| Styling | CSS + Tailwind (opsional) |
+| Deployment | [Vercel](https://vercel.com) atau server Node.js |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-"# laporan_hafalan_ar" 
+## 🧠 Struktur Role Aplikasi
+
+| Role | Akses |
+|------|--------|
+| **Super Admin / Admin** | Kelola semua pengguna, jadwal, dan data hafalan |
+| **Guru** | Input hasil hafalan siswa |
+| **Siswa** | Lihat hasil hafalan dan target berikutnya |
+| **Orang Tua** | Memantau progres hafalan anak |
+
+---
+
+## 🛠️ Cara Menjalankan Aplikasi
+
+1. **Clone repository**
+   ```bash
+   git clone https://github.com/username/laporan_hafalan_ar.git
+   cd laporan_hafalan_ar
