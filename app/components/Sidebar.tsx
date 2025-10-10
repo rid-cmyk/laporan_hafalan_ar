@@ -8,6 +8,10 @@ import {
   SettingFilled,
   UserOutlined,
   LogoutOutlined,
+  TeamOutlined,
+  CalendarOutlined,
+  NotificationOutlined,
+  BarChartOutlined,
 } from "@ant-design/icons";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -24,10 +28,13 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
 
   const getSelectedKey = () => {
     if (pathname === "/" || pathname.startsWith("/super-admin")) return "1";
+    if (pathname.startsWith("/admin")) return "4";
     if (pathname.startsWith("/users")) return "2";
     if (pathname.startsWith("/settings")) return "3";
     return "";
   };
+
+  const isAdminSection = pathname.startsWith("/admin");
 
   const handleLogout = async () => {
   try {
@@ -75,37 +82,72 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
         theme="dark"
         mode="inline"
         selectedKeys={[getSelectedKey()]}
-        items={[
-          {
-            key: "1",
-            icon: <DashboardOutlined />,
-            label: <Link href="/super-admin">Dashboard</Link>,
-          },
-          {
-            key: "2",
-            icon: <UserOutlined />,
-            label: <Link href="/users">Users</Link>,
-          },
-          {
-            key: "3",
-            icon: <SettingFilled />,
-            label: "Settings",
-            children: [
+        items={
+          isAdminSection
+            ? [
               {
-                key: "3-1",
-                label: <Link href="/settings/raport">Raport</Link>,
+                key: "4-1",
+                icon: <DashboardOutlined />,
+                label: <Link href="/admin/dashboard">Dashboard</Link>,
               },
               {
-                key: "3-2",
-                label: <Link href="/settings/tahun-ajaran">Tahun Ajaran</Link>,
+                key: "4-2",
+                icon: <TeamOutlined />,
+                label: <Link href="/admin/halaqah">Halaqah</Link>,
               },
               {
-                key: "3-3",
-                label: <Link href="/settings/backup-database">Backup Database</Link>,
+                key: "4-3",
+                icon: <CalendarOutlined />,
+                label: <Link href="/admin/jadwal">Jadwal</Link>,
               },
-            ],
-          },
-        ]}
+              {
+                key: "4-4",
+                icon: <NotificationOutlined />,
+                label: <Link href="/admin/pengumuman">Pengumuman</Link>,
+              },
+              {
+                key: "4-5",
+                icon: <BarChartOutlined />,
+                label: <Link href="/admin/laporan">Laporan</Link>,
+              },
+              {
+                key: "4-6",
+                icon: <SettingFilled />,
+                label: <Link href="/admin/settings">Settings</Link>,
+              },
+            ]
+            : [
+              {
+                key: "1",
+                icon: <DashboardOutlined />,
+                label: <Link href="/super-admin">Dashboard</Link>,
+              },
+              {
+                key: "2",
+                icon: <UserOutlined />,
+                label: <Link href="/users">Users</Link>,
+              },
+              {
+                key: "3",
+                icon: <SettingFilled />,
+                label: "Settings",
+                children: [
+                  {
+                    key: "3-1",
+                    label: <Link href="/settings/raport">Raport</Link>,
+                  },
+                  {
+                    key: "3-2",
+                    label: <Link href="/settings/tahun-ajaran">Tahun Ajaran</Link>,
+                  },
+                  {
+                    key: "3-3",
+                    label: <Link href="/settings/backup-database">Backup Database</Link>,
+                  },
+                ],
+              },
+            ]
+        }
       />
 
       {/* 🌿 Tombol Logout Bulat Melingkar */}

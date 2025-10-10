@@ -38,30 +38,11 @@ export async function POST(request: Request) {
     // Normalize role name: capitalize first letter, rest lowercase
     const normalizedName = trimmedName.charAt(0).toUpperCase() + trimmedName.slice(1).toLowerCase();
 
-    // Check for case-insensitive duplicate using manual checks
-    const upperCaseCheck = await prisma.role.findFirst({
-      where: { name: normalizedName.toUpperCase() }
-    });
-    if (upperCaseCheck) {
-      return NextResponse.json({
-        error: `Role "${normalizedName}" sudah ada. Gunakan nama lain.`
-      }, { status: 400 });
-    }
-
-    const lowerCaseCheck = await prisma.role.findFirst({
-      where: { name: normalizedName.toLowerCase() }
-    });
-    if (lowerCaseCheck) {
-      return NextResponse.json({
-        error: `Role "${normalizedName}" sudah ada. Gunakan nama lain.`
-      }, { status: 400 });
-    }
-
-    // Also check exact match
-    const exactCheck = await prisma.role.findFirst({
-      where: { name: normalizedName }
-    });
-    if (exactCheck) {
+    // Check for case-insensitive duplicate
+    const existingRoles = await prisma.$queryRaw<Array<{ id: number; name: string }>>`
+      SELECT id, name FROM "Role" WHERE LOWER(name) = LOWER(${normalizedName})
+    `;
+    if (existingRoles.length > 0) {
       return NextResponse.json({
         error: `Role "${normalizedName}" sudah ada. Gunakan nama lain.`
       }, { status: 400 });

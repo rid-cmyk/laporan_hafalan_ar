@@ -54,6 +54,7 @@ export default function UsersPage() {
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [userForm] = Form.useForm();
   const [roleForm] = Form.useForm();
+  const [roleDuplicateWarning, setRoleDuplicateWarning] = useState("");
 
   const isMobile = useMediaQuery({ maxWidth: 768 });
 
@@ -111,6 +112,18 @@ export default function UsersPage() {
       const values = await userForm.validateFields();
       console.log("User form values:", values);
 
+      // Check for duplicate username in frontend
+      const existingUser = users.find(user =>
+        user.username === values.username &&
+        (!editingUser || user.id !== editingUser.id)
+      );
+      if (existingUser) {
+        message.error("Username already exists");
+        setIsUserModalOpen(false);
+        userForm.resetFields();
+        return;
+      }
+
       // Ensure roleId is a number
       const payload = {
         ...values,
@@ -162,21 +175,41 @@ export default function UsersPage() {
   const handleDeleteUser = async (id: number) => {
     try {
       const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete user");
-      message.success("User berhasil dihapus");
+      if (!res.ok) {
+        let errorData;
+        try {
+          errorData = await res.json();
+        } catch (parseError) {
+          errorData = { error: `Server error (${res.status})` };
+        }
+        throw new Error(errorData.error || `Failed to delete user (${res.status})`);
+      }
+      const data = await res.json();
+      message.success(data.message || "User berhasil dihapus");
       fetchUsers();
-    } catch {
-      message.error("Error deleting user");
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      message.error(error.message || "Error deleting user");
     }
   };
 
   const handleResetPassword = async (id: number) => {
     try {
       const res = await fetch(`/api/users/${id}/reset-password`, { method: "POST" });
-      if (!res.ok) throw new Error("Failed to reset password");
-      message.success("Password berhasil direset");
-    } catch {
-      message.error("Error resetting password");
+      if (!res.ok) {
+        let errorData;
+        try {
+          errorData = await res.json();
+        } catch (parseError) {
+          errorData = { error: `Server error (${res.status})` };
+        }
+        throw new Error(errorData.error || `Failed to reset password (${res.status})`);
+      }
+      const data = await res.json();
+      message.success(data.message || "Password berhasil direset");
+    } catch (error: any) {
+      console.error("Error resetting password:", error);
+      message.error(error.message || "Error resetting password");
     }
   };
 
@@ -189,6 +222,7 @@ export default function UsersPage() {
       setEditingRole(null);
       roleForm.resetFields();
     }
+    setRoleDuplicateWarning("");
     setIsRoleModalOpen(true);
   };
 
@@ -196,6 +230,19 @@ export default function UsersPage() {
     try {
       const values = await roleForm.validateFields();
       console.log("Role form values:", values);
+
+      // Check for duplicate in frontend
+      const normalizedName = values.name.trim().charAt(0).toUpperCase() + values.name.trim().slice(1).toLowerCase();
+      const existingRole = roles.find(role =>
+        role.name.toLowerCase() === normalizedName.toLowerCase() &&
+        (!editingRole || role.id !== editingRole.id)
+      );
+      if (existingRole) {
+        message.error("Role sudah ada. Gunakan nama lain.");
+        setIsRoleModalOpen(false);
+        roleForm.resetFields();
+        return;
+      }
 
       const url = editingRole ? `/api/roles/${editingRole.id}` : "/api/roles";
       const method = editingRole ? "PUT" : "POST";
@@ -216,9 +263,13 @@ export default function UsersPage() {
           errorData = await res.json();
         } catch (parseError) {
           // If response is not JSON (e.g., HTML error page), create a generic error
+          console.error("Failed to parse error response as JSON:", parseError);
           errorData = { error: `Server error (${res.status})` };
         }
-        console.error("Role API error:", errorData);
+        if (!errorData || !errorData.error) {
+          errorData = { error: `Server error (${res.status})` };
+        }
+        console.error("Role API error:", errorData, "Status:", res.status);
         throw new Error(errorData.error || `Failed to save role (${res.status})`);
       }
 
@@ -404,36 +455,21 @@ export default function UsersPage() {
               />
             </Card>
           </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              <Statistic
-                title="Admin"
-                value={getUserCountByRole("admin")}
-                prefix={<TeamOutlined />}
-                valueStyle={{ color: "#1890ff" }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              <Statistic
-                title="Guru"
-                value={getUserCountByRole("guru")}
-                prefix={<TeamOutlined />}
-                valueStyle={{ color: "#722ed1" }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              <Statistic
-                title="Santri"
-                value={getUserCountByRole("santri")}
-                prefix={<TeamOutlined />}
-                valueStyle={{ color: "#eb2f96" }}
-              />
-            </Card>
-          </Col>
+          {roles.map((role, index) => {
+            const colors = ["#1890ff", "#722ed1", "#eb2f96", "#52c41a", "#faad14", "#f5222d"];
+            return (
+              <Col xs={24} sm={12} md={6} key={role.id}>
+                <Card>
+                  <Statistic
+                    title={role.name}
+                    value={getUserCountByRole(role.name.toLowerCase())}
+                    prefix={<TeamOutlined />}
+                    valueStyle={{ color: colors[index % colors.length] }}
+                  />
+                </Card>
+              </Col>
+            );
+          })}
         </Row>
 
         {/* Main Content Tabs */}
@@ -459,21 +495,11 @@ export default function UsersPage() {
                   />
                 </Card>
               </TabPane>
-              <TabPane tab="Admin" key="admin">
-                {renderUserTable("admin")}
-              </TabPane>
-              <TabPane tab="Guru/Ustadz" key="guru">
-                {renderUserTable("guru")}
-              </TabPane>
-              <TabPane tab="Santri" key="santri">
-                {renderUserTable("santri")}
-              </TabPane>
-              <TabPane tab="Ortu" key="ortu">
-                {renderUserTable("ortu")}
-              </TabPane>
-              <TabPane tab="Yayasan" key="yayasan">
-                {renderUserTable("yayasan")}
-              </TabPane>
+              {roles.map(role => (
+                <TabPane tab={role.name} key={role.name.toLowerCase()}>
+                  {renderUserTable(role.name.toLowerCase())}
+                </TabPane>
+              ))}
             </Tabs>
           </TabPane>
           <TabPane tab="Role Management" key="roles">
@@ -580,7 +606,27 @@ export default function UsersPage() {
               name="name"
               rules={[{ required: true, message: "Please enter role name" }]}
             >
-              <Input placeholder="Enter role name" />
+              <Input
+                placeholder="Enter role name"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  const normalized = value.trim().charAt(0).toUpperCase() + value.trim().slice(1).toLowerCase();
+                  const existing = roles.find(role =>
+                    role.name.toLowerCase() === normalized.toLowerCase() &&
+                    (!editingRole || role.id !== editingRole.id)
+                  );
+                  if (existing) {
+                    setRoleDuplicateWarning("Role sudah ada. Gunakan nama lain.");
+                  } else {
+                    setRoleDuplicateWarning("");
+                  }
+                }}
+              />
+              {roleDuplicateWarning && (
+                <div style={{ color: 'red', fontSize: '12px', marginTop: '4px' }}>
+                  {roleDuplicateWarning}
+                </div>
+              )}
             </Form.Item>
           </Form>
         </Modal>
