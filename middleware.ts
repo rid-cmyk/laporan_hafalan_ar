@@ -1,32 +1,30 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import jwt from "jsonwebtoken";
+import { jwtVerify } from "jose";
 
-const JWT_SECRET = process.env.JWT_SECRET || "mysecretkey";
+const secret = process.env.JWT_SECRET || "mysecretkey";
+const JWT_SECRET = new TextEncoder().encode(secret);
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const token = req.cookies.get("auth_token")?.value;
 
-  // 1. Not logged in → redirect to /login
-  if (!token) {
+  if (!token || typeof token !== "string") {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
   try {
-    // Verify JWT
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    const role = decoded.role?.toLowerCase();
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const role = (payload.role as string)?.toLowerCase();
 
-    // Pass user info to downstream routes
+
     const requestHeaders = new Headers(req.headers);
-    requestHeaders.set("x-user-role", decoded.role);
-    requestHeaders.set("x-user-name", decoded.namaLengkap);
+    if (payload.role) requestHeaders.set("x-user-role", payload.role as string);
+    if (payload.namaLengkap)
+      requestHeaders.set("x-user-name", payload.namaLengkap as string);
 
     const url = req.nextUrl.clone();
     const path = url.pathname;
 
-    // 3. Role-based access rules
     if (path.startsWith("/users") || path.startsWith("/settings")) {
       if (!["super_admin", "admin"].includes(role)) {
         return NextResponse.redirect(new URL("/unauthorized", req.url));
@@ -45,44 +43,28 @@ export function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL("/unauthorized", req.url));
     }
 
-    // ✅ 4. Allow access
     return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
+      request: { headers: requestHeaders },
     });
   } catch (err) {
-    console.error("JWT error:", err);
+    console.error("JWT verification error:", err);
     return NextResponse.redirect(new URL("/login", req.url));
   }
 }
 
-// ✅ 5. Match all protected routes
 export const config = {
   matcher: [
-    // Dashboard
     "/dashboard",
     "/dashboard/:path*",
-
-    // Users (admin only)
     "/users",
     "/users/:path*",
-
-    // Settings (admin only)
     "/settings",
     "/settings/:path*",
-
-    // Guru
     "/guru",
     "/guru/:path*",
-
-    // Orang Tua
     "/orang_tua",
     "/orang_tua/:path*",
-
-    // Siswa
     "/siswa",
     "/siswa/:path*",
   ],
 };
-

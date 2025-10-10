@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
+import { jwtVerify } from "jose";
 
-const JWT_SECRET = process.env.JWT_SECRET || "mysecretkey";
+const secret = new TextEncoder().encode(process.env.JWT_SECRET || "mysecretkey");
 
 export async function GET(req: Request) {
   const cookie = req.headers.get("cookie");
@@ -12,9 +12,10 @@ export async function GET(req: Request) {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    return NextResponse.json({ loggedIn: true, user: decoded });
-  } catch {
+    const { payload } = await jwtVerify(token, secret);
+    return NextResponse.json({ loggedIn: true, user: payload });
+  } catch (err) {
+    console.error("Token verification failed:", err);
     return NextResponse.json({ loggedIn: false }, { status: 401 });
   }
 }

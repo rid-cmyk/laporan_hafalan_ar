@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import jwt from "jsonwebtoken";
+import { SignJWT } from "jose";
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || "mysecretkey";
+const secret = new TextEncoder().encode(process.env.JWT_SECRET || "mysecretkey");
 
 export async function POST(req: Request) {
   try {
@@ -22,16 +22,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid passcode" }, { status: 401 });
     }
 
-    // Create JWT token
-    const token = jwt.sign(
-      {
-        id: user.id,
-        namaLengkap: user.namaLengkap,
-        role: user.role.name,
-      },
-      JWT_SECRET,
-      { expiresIn: "1d" }
-    );
+    // ✅ Create JWT token using jose (Edge-compatible)
+    const token = await new SignJWT({
+      id: user.id,
+      namaLengkap: user.namaLengkap,
+      role: user.role.name,
+    })
+      .setProtectedHeader({ alg: "HS256" })
+      .setExpirationTime("1d")
+      .sign(secret);
 
     // ✅ Set cookie
     const res = NextResponse.json({
