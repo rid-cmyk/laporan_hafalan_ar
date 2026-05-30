@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = params.id;
+    const { id } = await params;
     if (!id) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
@@ -18,8 +18,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     });
 
     return NextResponse.json({ message: "Password reset successfully" });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("POST /api/users/[id]/reset-password error:", error);
-    return NextResponse.json({ error: "Failed to reset password", detail: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to reset password", detail: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
   }
 }

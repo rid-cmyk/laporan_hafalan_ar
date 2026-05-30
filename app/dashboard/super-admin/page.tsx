@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Row, Col, Card, Statistic, Space } from "antd";
+import { useEffect, useState, useMemo } from "react";
+import { Row, Col, Card, Statistic } from "antd";
 import {
   UserOutlined,
   TeamOutlined,
@@ -24,82 +24,52 @@ interface User {
   role: Role;
 }
 
-interface Hafalan {
-  id: number;
-  status: string;
-}
-
-interface Absensi {
-  id: number;
-  status: string;
-}
-
 export default function SuperAdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
-  const [hafalan, setHafalan] = useState<Hafalan[]>([]);
-  const [absensi, setAbsensi] = useState<Absensi[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  // Fetch data
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/users");
-      if (!res.ok) throw new Error("Failed to fetch users");
-      const data = await res.json();
-      setUsers(data);
-    } catch {
-      // Handle error silently for dashboard
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchHafalan = async () => {
-    try {
-      // Assuming there's an API for hafalan stats
-      // For now, using placeholder
-      setHafalan([]);
-    } catch {
-      // Handle error
-    }
-  };
-
-  const fetchAbsensi = async () => {
-    try {
-      // Assuming there's an API for absensi stats
-      // For now, using placeholder
-      setAbsensi([]);
-    } catch {
-      // Handle error
-    }
-  };
+  const [hafalan, setHafalan] = useState<{ id: number; status: string }[]>([]);
+  const [absensi] = useState<{ id: number; status: string }[]>([]);
 
   useEffect(() => {
-    fetchUsers();
-    fetchHafalan();
-    fetchAbsensi();
+    const fetchAll = async () => {
+      try {
+        const [usersRes, hafRes] = await Promise.all([
+          fetch("/api/users?limit=100"),
+          fetch("/api/hafalan?limit=100"),
+        ]);
+        if (usersRes.ok) {
+          const result = await usersRes.json();
+          setUsers(result.data || result);
+        }
+        if (hafRes.ok) {
+          const result = await hafRes.json();
+          setHafalan(result.data || []);
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      }
+    };
+    fetchAll();
   }, []);
 
-  // Statistics
-  const getUserCountByRole = (roleName: string) => {
-    return users.filter((user) => user.role.name.toLowerCase() === roleName.toLowerCase()).length;
-  };
+  const userStats = useMemo(() => {
+    const totalSantri = users.filter((user) => user.role.name.toLowerCase() === "santri").length;
+    const totalGuru = users.filter((user) => user.role.name.toLowerCase() === "guru").length;
+    const totalAdmin = users.filter((user) => user.role.name.toLowerCase() === "admin").length;
+    return { totalUsers: users.length, totalSantri, totalGuru, totalAdmin };
+  }, [users]);
 
-  const totalUsers = users.length;
-  const totalSantri = getUserCountByRole("santri");
-  const totalGuru = getUserCountByRole("guru");
-  const totalAdmin = getUserCountByRole("admin");
+  const hafalanStats = useMemo(() => {
+    const completed = hafalan.filter((h) => h.status === "ziyadah").length;
+    const total = hafalan.length;
+    const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    return { rate, total, completed };
+  }, [hafalan]);
 
-  // Calculate hafalan completion rate (placeholder)
-  const hafalanCompleted = hafalan.filter((h) => h.status === "selesai").length;
-  const hafalanTotal = hafalan.length;
-  const hafalanRate = hafalanTotal > 0 ? Math.round((hafalanCompleted / hafalanTotal) * 100) : 0;
-
-  // Calculate attendance rate (placeholder)
-  const absensiPresent = absensi.filter((a) => a.status === "masuk").length;
-  const absensiTotal = absensi.length;
-  const attendanceRate = absensiTotal > 0 ? Math.round((absensiPresent / absensiTotal) * 100) : 0;
+  const absensiRate = useMemo(() => {
+    const present = absensi.filter((a) => a.status === "masuk").length;
+    const total = absensi.length;
+    return total > 0 ? Math.round((present / total) * 100) : 0;
+  }, [absensi]);
 
   return (
     <LayoutApp>
@@ -109,13 +79,12 @@ export default function SuperAdminDashboard() {
           Overview of system statistics and user management
         </p>
 
-        {/* Statistics Cards */}
         <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
           <Col xs={24} sm={12} md={4}>
             <Card>
               <Statistic
                 title="Total Users"
-                value={totalUsers}
+                value={userStats.totalUsers}
                 prefix={<UserOutlined />}
                 valueStyle={{ color: "#3f8600" }}
               />
@@ -125,7 +94,7 @@ export default function SuperAdminDashboard() {
             <Card>
               <Statistic
                 title="Santri"
-                value={totalSantri}
+                value={userStats.totalSantri}
                 prefix={<TeamOutlined />}
                 valueStyle={{ color: "#1890ff" }}
               />
@@ -135,7 +104,7 @@ export default function SuperAdminDashboard() {
             <Card>
               <Statistic
                 title="Guru"
-                value={totalGuru}
+                value={userStats.totalGuru}
                 prefix={<TeamOutlined />}
                 valueStyle={{ color: "#722ed1" }}
               />
@@ -145,7 +114,7 @@ export default function SuperAdminDashboard() {
             <Card>
               <Statistic
                 title="Admin"
-                value={totalAdmin}
+                value={userStats.totalAdmin}
                 prefix={<TeamOutlined />}
                 valueStyle={{ color: "#eb2f96" }}
               />
@@ -155,7 +124,7 @@ export default function SuperAdminDashboard() {
             <Card>
               <Statistic
                 title="Hafalan Rate"
-                value={hafalanRate}
+                value={hafalanStats.rate}
                 suffix="%"
                 prefix={<BookOutlined />}
                 valueStyle={{ color: "#52c41a" }}
@@ -166,7 +135,7 @@ export default function SuperAdminDashboard() {
             <Card>
               <Statistic
                 title="Attendance"
-                value={attendanceRate}
+                value={absensiRate}
                 suffix="%"
                 prefix={<CalendarOutlined />}
                 valueStyle={{ color: "#fa8c16" }}
@@ -175,13 +144,9 @@ export default function SuperAdminDashboard() {
           </Col>
         </Row>
 
-        {/* Quick Actions */}
         <Row gutter={[16, 16]}>
           <Col xs={24} md={12}>
-            <Card
-              title="Quick Actions"
-              bordered={false}
-            >
+            <Card title="Quick Actions" bordered={false}>
               <p style={{ marginBottom: 16 }}>
                 <strong>Manage Users:</strong> Add, edit, and organize user accounts by role
               </p>
@@ -194,17 +159,14 @@ export default function SuperAdminDashboard() {
             </Card>
           </Col>
           <Col xs={24} md={12}>
-            <Card
-              title="System Status"
-              bordered={false}
-            >
+            <Card title="System Status" bordered={false}>
               <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
                 <DatabaseOutlined style={{ color: "#52c41a", marginRight: 8 }} />
                 <span>Database: <strong style={{ color: "#52c41a" }}>Healthy</strong></span>
               </div>
               <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
                 <UserOutlined style={{ color: "#1890ff", marginRight: 8 }} />
-                <span>Active Users: <strong>{totalUsers}</strong></span>
+                <span>Active Users: <strong>{userStats.totalUsers}</strong></span>
               </div>
               <div style={{ display: "flex", alignItems: "center" }}>
                 <BookOutlined style={{ color: "#722ed1", marginRight: 8 }} />

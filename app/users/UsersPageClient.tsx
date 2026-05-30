@@ -1,8 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import {
   Row,
   Col,
@@ -27,7 +25,6 @@ import {
   DeleteOutlined,
   KeyOutlined,
 } from "@ant-design/icons";
-import { useMediaQuery } from "react-responsive";
 import LayoutApp from "../components/LayoutApp";
 
 const { TabPane } = Tabs;
@@ -58,47 +55,56 @@ export default function UsersPageClient() {
   const [roleForm] = Form.useForm();
   const [roleDuplicateWarning, setRoleDuplicateWarning] = useState("");
 
-  const isMobile = useMediaQuery({ maxWidth: 768 });
-
-  // Fetch data
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
-      console.log("Fetching users...");
-      const res = await fetch("/api/users");
+      const res = await fetch("/api/users?limit=100");
       if (!res.ok) throw new Error("Failed to fetch users");
-      const data = await res.json();
-      console.log("Fetched users:", data);
-      setUsers(data);
-    } catch (error: any) {
-      console.error("Error fetching users:", error);
+      const result = await res.json();
+      setUsers(result.data || result);
+    } catch {
       message.error("Error fetching users");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchRoles = async () => {
+  const fetchRoles = useCallback(async () => {
     try {
-      console.log("Fetching roles...");
       const res = await fetch("/api/roles");
       if (!res.ok) throw new Error("Failed to fetch roles");
       const data = await res.json();
-      console.log("Fetched roles:", data);
       setRoles(data);
-    } catch (error: any) {
-      console.error("Error fetching roles:", error);
+    } catch {
       message.error("Error fetching roles");
     }
-  };
-
-  useEffect(() => {
-    fetchUsers();
-    fetchRoles();
   }, []);
 
-  // User CRUD
-  const openUserModal = (user?: User) => {
+  useEffect(() => {
+    Promise.all([fetchUsers(), fetchRoles()]);
+  }, [fetchUsers, fetchRoles]);
+
+  const userStats = useMemo(() => {
+    const total = users.length;
+    const byRole: Record<string, number> = {};
+    for (const user of users) {
+      const name = user.role.name.toLowerCase();
+      byRole[name] = (byRole[name] || 0) + 1;
+    }
+    return { total, byRole };
+  }, [users]);
+
+  const usersByRole = useMemo(() => {
+    const map: Record<string, User[]> = {};
+    for (const user of users) {
+      const name = user.role.name.toLowerCase();
+      if (!map[name]) map[name] = [];
+      map[name].push(user);
+    }
+    return map;
+  }, [users]);
+
+  const openUserModal = useCallback((user?: User) => {
     if (user) {
       setEditingUser(user);
       userForm.setFieldsValue({ ...user, roleId: user.role.id });
@@ -107,26 +113,11 @@ export default function UsersPageClient() {
       userForm.resetFields();
     }
     setIsUserModalOpen(true);
-  };
+  }, [userForm]);
 
-  const handleSaveUser = async () => {
+  const handleSaveUser = useCallback(async () => {
     try {
       const values = await userForm.validateFields();
-      console.log("User form values:", values);
-
-      // Check for duplicate username in frontend
-      const existingUser = users.find(user =>
-        user.username === values.username &&
-        (!editingUser || user.id !== editingUser.id)
-      );
-      if (existingUser) {
-        message.error("Username already exists");
-        setIsUserModalOpen(false);
-        userForm.resetFields();
-        return;
-      }
-
-      // Ensure roleId is a number
       const payload = {
         ...values,
         roleId: Number(values.roleId),
@@ -135,53 +126,44 @@ export default function UsersPageClient() {
       const url = editingUser ? `/api/users/${editingUser.id}` : "/api/users";
       const method = editingUser ? "PUT" : "POST";
 
-      console.log("Sending request to:", url, "with method:", method);
-
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      console.log("Response status:", res.status);
-
       if (!res.ok) {
         let errorData;
         try {
           errorData = await res.json();
-        } catch (parseError) {
-          // If response is not JSON (e.g., HTML error page), create a generic error
+        } catch {
           errorData = { error: `Server error (${res.status})` };
         }
-        console.error("API error:", errorData);
         throw new Error(errorData.error || `Failed to save user (${res.status})`);
       }
-
-      const data = await res.json();
-      console.log("Success response:", data);
 
       message.success(editingUser ? "User berhasil diperbarui" : "User berhasil ditambahkan");
       setIsUserModalOpen(false);
       userForm.resetFields();
       fetchUsers();
-    } catch (error: any) {
-      console.error("Error saving user:", error);
-      if (error.message.includes("validateFields")) {
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : "Unknown error";
+      if (errMsg.includes("validateFields")) {
         message.error("Please fill in all required fields correctly");
       } else {
-        message.error(error.message || "Error saving user");
+        message.error(errMsg || "Error saving user");
       }
     }
-  };
+  }, [userForm, editingUser, fetchUsers]);
 
-  const handleDeleteUser = async (id: number) => {
+  const handleDeleteUser = useCallback(async (id: number) => {
     try {
       const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
       if (!res.ok) {
         let errorData;
         try {
           errorData = await res.json();
-        } catch (parseError) {
+        } catch {
           errorData = { error: `Server error (${res.status})` };
         }
         throw new Error(errorData.error || `Failed to delete user (${res.status})`);
@@ -189,34 +171,33 @@ export default function UsersPageClient() {
       const data = await res.json();
       message.success(data.message || "User berhasil dihapus");
       fetchUsers();
-    } catch (error: any) {
-      console.error("Error deleting user:", error);
-      message.error(error.message || "Error deleting user");
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : "Error deleting user";
+      message.error(errMsg);
     }
-  };
+  }, [fetchUsers]);
 
-  const handleResetPassword = async (id: number) => {
+  const handleResetPassword = useCallback(async (id: number) => {
     try {
       const res = await fetch(`/api/users/${id}/reset-password`, { method: "POST" });
       if (!res.ok) {
         let errorData;
         try {
           errorData = await res.json();
-        } catch (parseError) {
+        } catch {
           errorData = { error: `Server error (${res.status})` };
         }
         throw new Error(errorData.error || `Failed to reset password (${res.status})`);
       }
       const data = await res.json();
       message.success(data.message || "Password berhasil direset");
-    } catch (error: any) {
-      console.error("Error resetting password:", error);
-      message.error(error.message || "Error resetting password");
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : "Error resetting password";
+      message.error(errMsg);
     }
-  };
+  }, []);
 
-  // Role CRUD
-  const openRoleModal = (role?: Role) => {
+  const openRoleModal = useCallback((role?: Role) => {
     if (role) {
       setEditingRole(role);
       roleForm.setFieldsValue(role);
@@ -226,30 +207,15 @@ export default function UsersPageClient() {
     }
     setRoleDuplicateWarning("");
     setIsRoleModalOpen(true);
-  };
+  }, [roleForm]);
 
-  const handleSaveRole = async () => {
+  const handleSaveRole = useCallback(async () => {
     try {
       const values = await roleForm.validateFields();
-      console.log("Role form values:", values);
-
-      // Check for duplicate in frontend
       const normalizedName = values.name.trim().charAt(0).toUpperCase() + values.name.trim().slice(1).toLowerCase();
-      const existingRole = roles.find(role =>
-        role.name.toLowerCase() === normalizedName.toLowerCase() &&
-        (!editingRole || role.id !== editingRole.id)
-      );
-      if (existingRole) {
-        message.error("Role sudah ada. Gunakan nama lain.");
-        setIsRoleModalOpen(false);
-        roleForm.resetFields();
-        return;
-      }
 
       const url = editingRole ? `/api/roles/${editingRole.id}` : "/api/roles";
       const method = editingRole ? "PUT" : "POST";
-
-      console.log("Sending role request to:", url, "with method:", method, "values:", values);
 
       const res = await fetch(url, {
         method,
@@ -257,79 +223,50 @@ export default function UsersPageClient() {
         body: JSON.stringify(values),
       });
 
-      console.log("Role response status:", res.status);
-
       if (!res.ok) {
         let errorData;
         try {
           errorData = await res.json();
-        } catch (parseError) {
-          // If response is not JSON (e.g., HTML error page), create a generic error
-          console.error("Failed to parse error response as JSON:", parseError);
+        } catch {
           errorData = { error: `Server error (${res.status})` };
         }
-        if (!errorData || !errorData.error) {
-          errorData = { error: `Server error (${res.status})` };
-        }
-        console.error("Role API error:", errorData, "Status:", res.status);
         throw new Error(errorData.error || `Failed to save role (${res.status})`);
       }
-
-      const data = await res.json();
-      console.log("Role success response:", data);
 
       message.success(editingRole ? "Role berhasil diperbarui" : "Role berhasil ditambahkan");
       setIsRoleModalOpen(false);
       roleForm.resetFields();
 
-      // Force refresh both roles and users data
       await Promise.all([fetchRoles(), fetchUsers()]);
-
-    } catch (error: any) {
-      console.error("Error saving role:", error);
-      if (error.message.includes("validateFields")) {
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : "Unknown error";
+      if (errMsg.includes("validateFields")) {
         message.error("Masukkan nama role yang valid");
-      } else if (error.message.includes("sudah ada")) {
+      } else if (errMsg.includes("sudah ada")) {
         message.error("Role sudah ada. Gunakan nama lain.");
       } else {
-        message.error(error.message || "Error menyimpan role");
+        message.error(errMsg || "Error menyimpan role");
       }
     }
-  };
+  }, [roleForm, editingRole, fetchRoles, fetchUsers]);
 
-  const handleDeleteRole = async (id: number) => {
+  const handleDeleteRole = useCallback(async (id: number) => {
     try {
-      console.log("Deleting role with ID:", id);
       const res = await fetch(`/api/roles/${id}`, { method: "DELETE" });
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || "Failed to delete role");
       }
       const data = await res.json();
-      console.log("Delete response:", data);
       message.success(data.message || "Role berhasil dihapus");
-
-      // Force refresh both roles and users data
       await Promise.all([fetchRoles(), fetchUsers()]);
-    } catch (error: any) {
-      console.error("Error deleting role:", error);
-      message.error(error.message || "Error menghapus role");
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : "Error menghapus role";
+      message.error(errMsg);
     }
-  };
+  }, [fetchRoles, fetchUsers]);
 
-  // Statistics
-  const getUserCountByRole = (roleName: string) => {
-    return users.filter((user) => user.role.name.toLowerCase() === roleName.toLowerCase()).length;
-  };
-
-  const totalUsers = users.length;
-
-  // Filter users by role
-  const getUsersByRole = (roleName: string) => {
-    return users.filter((user) => user.role.name.toLowerCase() === roleName.toLowerCase());
-  };
-
-  const userColumns = [
+  const userColumns = useMemo(() => [
     { title: "ID", dataIndex: "id", key: "id", width: 80 },
     { title: "Username", dataIndex: "username", key: "username" },
     { title: "Full Name", dataIndex: "namaLengkap", key: "namaLengkap" },
@@ -370,9 +307,9 @@ export default function UsersPageClient() {
         </Space>
       ),
     },
-  ];
+  ], [openUserModal, handleResetPassword, handleDeleteUser]);
 
-  const roleColumns = [
+  const roleColumns = useMemo(() => [
     { title: "ID", dataIndex: "id", key: "id", width: 80 },
     { title: "Role Name", dataIndex: "name", key: "name" },
     {
@@ -402,7 +339,7 @@ export default function UsersPageClient() {
           </Button>
           <Popconfirm
             title="Delete Role"
-            description="Are you sure you want to delete this role? All users with this role will be permanently deleted."
+            description="All users with this role will be permanently deleted."
             onConfirm={() => handleDeleteRole(record.id)}
             okText="Delete"
             cancelText="Cancel"
@@ -415,10 +352,10 @@ export default function UsersPageClient() {
         </Space>
       ),
     },
-  ];
+  ], [openRoleModal, handleDeleteRole]);
 
-  const renderUserTable = (roleName: string) => {
-    const filteredUsers = getUsersByRole(roleName);
+  const renderUserTable = useCallback((roleName: string) => {
+    const filteredUsers = usersByRole[roleName] || [];
     return (
       <Card
         title={`${roleName.charAt(0).toUpperCase() + roleName.slice(1)} Users (${filteredUsers.length})`}
@@ -438,49 +375,46 @@ export default function UsersPageClient() {
         />
       </Card>
     );
-  };
+  }, [usersByRole, userColumns, loading, openUserModal]);
+
+  const colors = useMemo(() => ["#1890ff", "#722ed1", "#eb2f96", "#52c41a", "#faad14", "#f5222d"], []);
 
   return (
     <LayoutApp>
       <div style={{ padding: "24px 0" }}>
         <h1>Users Management</h1>
 
-        {/* Statistics Cards */}
         <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
           <Col xs={24} sm={12} md={6}>
             <Card>
               <Statistic
                 title="Total Users"
-                value={totalUsers}
+                value={userStats.total}
                 prefix={<UserOutlined />}
                 valueStyle={{ color: "#3f8600" }}
               />
             </Card>
           </Col>
-          {roles.map((role, index) => {
-            const colors = ["#1890ff", "#722ed1", "#eb2f96", "#52c41a", "#faad14", "#f5222d"];
-            return (
-              <Col xs={24} sm={12} md={6} key={role.id}>
-                <Card>
-                  <Statistic
-                    title={role.name}
-                    value={getUserCountByRole(role.name.toLowerCase())}
-                    prefix={<TeamOutlined />}
-                    valueStyle={{ color: colors[index % colors.length] }}
-                  />
-                </Card>
-              </Col>
-            );
-          })}
+          {roles.map((role, index) => (
+            <Col xs={24} sm={12} md={6} key={role.id}>
+              <Card>
+                <Statistic
+                  title={role.name}
+                  value={userStats.byRole[role.name.toLowerCase()] || 0}
+                  prefix={<TeamOutlined />}
+                  valueStyle={{ color: colors[index % colors.length] }}
+                />
+              </Card>
+            </Col>
+          ))}
         </Row>
 
-        {/* Main Content Tabs */}
         <Tabs defaultActiveKey="users" type="card" size="large">
           <TabPane tab="User Management" key="users">
             <Tabs defaultActiveKey="all" type="line" size="small">
               <TabPane tab="All Users" key="all">
                 <Card
-                  title={`All Users (${totalUsers})`}
+                  title={`All Users (${userStats.total})`}
                   extra={
                     <Button type="primary" icon={<PlusOutlined />} onClick={() => openUserModal()}>
                       Add User
@@ -525,7 +459,6 @@ export default function UsersPageClient() {
           </TabPane>
         </Tabs>
 
-        {/* User Modal */}
         <Modal
           title={
             <Space>
@@ -588,7 +521,6 @@ export default function UsersPageClient() {
           </Form>
         </Modal>
 
-        {/* Role Modal */}
         <Modal
           title={
             <Space>
@@ -617,11 +549,7 @@ export default function UsersPageClient() {
                     role.name.toLowerCase() === normalized.toLowerCase() &&
                     (!editingRole || role.id !== editingRole.id)
                   );
-                  if (existing) {
-                    setRoleDuplicateWarning("Role sudah ada. Gunakan nama lain.");
-                  } else {
-                    setRoleDuplicateWarning("");
-                  }
+                  setRoleDuplicateWarning(existing ? "Role sudah ada. Gunakan nama lain." : "");
                 }}
               />
               {roleDuplicateWarning && (

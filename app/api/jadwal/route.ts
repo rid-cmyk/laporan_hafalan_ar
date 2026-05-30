@@ -1,21 +1,38 @@
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
-// GET all jadwal
-export async function GET() {
+// GET all jadwal (with pagination)
+export async function GET(request: Request) {
   try {
-    const jadwal = await prisma.jadwal.findMany({
-      include: {
-        halaqah: {
-          include: {
-            guru: true
-          }
-        }
-      },
-      orderBy: { jamMulai: 'asc' }
-    });
+    const { searchParams } = new URL(request.url);
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50')));
+    const skip = (page - 1) * limit;
 
-    return NextResponse.json(jadwal);
+    const [jadwal, total] = await Promise.all([
+      prisma.jadwal.findMany({
+        include: {
+          halaqah: {
+            include: {
+              guru: { select: { id: true, namaLengkap: true, username: true } }
+            }
+          }
+        },
+        orderBy: { jamMulai: 'asc' },
+        skip,
+        take: limit,
+      }),
+      prisma.jadwal.count(),
+    ]);
+
+    return NextResponse.json({
+      data: jadwal,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+      },
+    });
   } catch (error) {
     console.error('GET /api/jadwal error:', error);
     return NextResponse.json({ error: 'Failed to fetch jadwal' }, { status: 500 });
@@ -68,11 +85,11 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(jadwal);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('POST /api/jadwal error:', error);
     return NextResponse.json({
       error: 'Failed to create jadwal',
-      details: error.message
+      details: error instanceof Error ? error.message : "Unknown error"
     }, { status: 500 });
   }
 }

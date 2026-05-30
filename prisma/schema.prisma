@@ -103,6 +103,9 @@ model User {
   Prestasi Prestasi[]
 
   Ujian Ujian[]
+
+  @@index([roleId])
+  @@index([passCode])
 }
 
 // ===================== Data Akademik =====================
@@ -115,6 +118,8 @@ model Halaqah {
   santri      HalaqahSantri[]
   jadwal      Jadwal[]
   ujian       Ujian[]
+
+  @@index([guruId])
 }
 
 model HalaqahSantri {
@@ -125,6 +130,9 @@ model HalaqahSantri {
   halaqahId     Int
   santri        User     @relation(fields: [santriId], references: [id])
   santriId      Int
+
+  @@index([halaqahId])
+  @@index([santriId])
 }
 
 model Hafalan {
@@ -137,6 +145,10 @@ model Hafalan {
   keterangan  String?
   santri      User          @relation(fields: [santriId], references: [id])
   santriId    Int
+
+  @@index([santriId])
+  @@index([tanggal])
+  @@index([santriId, tanggal])
 }
 
 model TargetHafalan {
@@ -147,6 +159,8 @@ model TargetHafalan {
   status     StatusTarget
   santri     User         @relation(fields: [santriId], references: [id])
   santriId   Int
+
+  @@index([santriId])
 }
 
 model Jadwal {
@@ -157,6 +171,10 @@ model Jadwal {
   halaqah   Halaqah  @relation(fields: [halaqahId], references: [id])
   halaqahId Int
   absensi   Absensi[]
+
+  @@index([halaqahId])
+  @@index([hari])
+  @@index([jamMulai])
 }
 
 model Absensi {
@@ -167,6 +185,9 @@ model Absensi {
   santriId Int
   jadwal   Jadwal        @relation(fields: [jadwalId], references: [id])
   jadwalId Int
+
+  @@index([santriId])
+  @@index([jadwalId])
 }
 
 model Prestasi {
@@ -177,6 +198,8 @@ model Prestasi {
   tahun        Int
   santri       User   @relation(fields: [santriId], references: [id])
   santriId     Int
+
+  @@index([santriId])
 }
 
 model Raport {
@@ -208,6 +231,10 @@ model Ujian {
   halaqahId  Int
   raport     Raport     @relation(fields: [raportId], references: [id])
   raportId   Int
+
+  @@index([santriId])
+  @@index([halaqahId])
+  @@index([raportId])
 }
 
 // ===================== Sistem & Notifikasi =====================
@@ -220,6 +247,8 @@ model Notifikasi {
   refId    Int?
   user     User      @relation(fields: [userId], references: [id])
   userId   Int
+
+  @@index([userId])
 }
 
 model Grafik {
@@ -244,6 +273,8 @@ model AuditLog {
   tanggal   DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id])
   userId    Int
+
+  @@index([userId])
 }
 
 model Pengumuman {
@@ -251,4 +282,12 @@ model Pengumuman {
   judul   String
   isi     String
   tanggal DateTime
+
+  @@index([tanggal])
+}
+
+model Setting {
+  id    String @id @default(uuid())
+  key   String @unique
+  value String
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { Row, Col, Card, Statistic, List, Button, Avatar, Typography } from "antd";
 import {
   UserOutlined,
@@ -10,6 +10,7 @@ import {
   NotificationOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
+import Link from "next/link";
 import LayoutApp from "../../components/LayoutApp";
 
 const { Title } = Typography;
@@ -45,46 +46,54 @@ export default function AdminDashboard() {
   const [halaqah, setHalaqah] = useState<Halaqah[]>([]);
   const [jadwal, setJadwal] = useState<Jadwal[]>([]);
   const [pengumuman, setPengumuman] = useState<Pengumuman[]>([]);
-  const [loading, setLoading] = useState(false);
 
-  // Fetch data
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
-      setLoading(true);
-      // Fetch users, halaqah, jadwal, pengumuman
       const [usersRes, halaqahRes, jadwalRes, pengumumanRes] = await Promise.all([
-        fetch("/api/users"),
-        fetch("/api/halaqah"),
+        fetch("/api/users?limit=100"),
+        fetch("/api/halaqah?limit=20"),
         fetch("/api/jadwal"),
         fetch("/api/pengumuman"),
       ]);
 
-      if (usersRes.ok) setUsers(await usersRes.json());
-      if (halaqahRes.ok) setHalaqah(await halaqahRes.json());
-      if (jadwalRes.ok) setJadwal(await jadwalRes.json());
-      if (pengumumanRes.ok) setPengumuman(await pengumumanRes.json());
+      if (usersRes.ok) {
+        const result = await usersRes.json();
+        setUsers(result.data || result);
+      }
+      if (halaqahRes.ok) {
+        const result = await halaqahRes.json();
+        setHalaqah(result.data || result);
+      }
+      if (jadwalRes.ok) {
+        const result = await jadwalRes.json();
+        setJadwal(result.data || result);
+      }
+      if (pengumumanRes.ok) {
+        const result = await pengumumanRes.json();
+        setPengumuman(result.data || result);
+      }
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
-  // Statistics
-  const totalSantri = users.filter(u => u.role.name.toLowerCase() === "santri").length;
-  const totalGuru = users.filter(u => u.role.name.toLowerCase() === "guru").length;
-  const totalHalaqah = halaqah.length;
+  const stats = useMemo(() => {
+    const santri = users.filter(u => u.role.name.toLowerCase() === "santri").length;
+    const guru = users.filter(u => u.role.name.toLowerCase() === "guru").length;
+    const totalHalaqah = halaqah.length;
+    return { santri, guru, totalHalaqah };
+  }, [users, halaqah]);
 
-  // Today's schedule
-  const today = new Date().toLocaleDateString("id-ID", { weekday: "long" });
-  const todaySchedule = jadwal.filter(j => j.hari === today);
+  const todaySchedule = useMemo(() => {
+    const today = new Date().toLocaleDateString("id-ID", { weekday: "long" });
+    return jadwal.filter(j => j.hari === today);
+  }, [jadwal]);
 
-  // Recent announcements
-  const recentPengumuman = pengumuman.slice(0, 3);
+  const recentPengumuman = useMemo(() => pengumuman.slice(0, 3), [pengumuman]);
 
   return (
     <LayoutApp>
@@ -94,13 +103,12 @@ export default function AdminDashboard() {
           <Avatar size="large" icon={<UserOutlined />} />
         </div>
 
-        {/* Statistics Cards */}
         <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
           <Col xs={24} sm={12} md={6}>
             <Card>
               <Statistic
                 title="Total Santri"
-                value={totalSantri}
+                value={stats.santri}
                 prefix={<BookOutlined />}
                 valueStyle={{ color: "#3f8600" }}
               />
@@ -110,7 +118,7 @@ export default function AdminDashboard() {
             <Card>
               <Statistic
                 title="Total Guru"
-                value={totalGuru}
+                value={stats.guru}
                 prefix={<TeamOutlined />}
                 valueStyle={{ color: "#1890ff" }}
               />
@@ -120,7 +128,7 @@ export default function AdminDashboard() {
             <Card>
               <Statistic
                 title="Total Halaqah"
-                value={totalHalaqah}
+                value={stats.totalHalaqah}
                 prefix={<CalendarOutlined />}
                 valueStyle={{ color: "#722ed1" }}
               />
@@ -148,7 +156,7 @@ export default function AdminDashboard() {
             <Card
               title="Pengumuman Terbaru"
               variant="borderless"
-              extra={<Button type="primary" icon={<PlusOutlined />}>Tambah Pengumuman</Button>}
+              extra={<Link href="/admin/pengumuman"><Button type="primary" icon={<PlusOutlined />}>Tambah Pengumuman</Button></Link>}
             >
               <List
                 dataSource={recentPengumuman}
@@ -165,20 +173,8 @@ export default function AdminDashboard() {
           </Col>
         </Row>
 
-        {/* Notifications Panel */}
         <Card title="Notifikasi" style={{ marginTop: 24 }}>
-          <List
-            dataSource={[]} // Placeholder for notifications
-            renderItem={(item) => (
-              <List.Item>
-                <List.Item.Meta
-                  avatar={<NotificationOutlined />}
-                  title="Notifikasi Title"
-                  description="Notifikasi description"
-                />
-              </List.Item>
-            )}
-          />
+          <p style={{ color: "#999" }}>Belum ada notifikasi</p>
         </Card>
       </div>
     </LayoutApp>

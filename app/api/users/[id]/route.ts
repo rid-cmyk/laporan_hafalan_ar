@@ -7,9 +7,9 @@ import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 // UPDATE user
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = params.id;
+    const { id } = await params;
     if (!id) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
@@ -35,24 +35,24 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     const { password, ...safeUser } = user;
     return NextResponse.json(safeUser);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("PUT /api/users error:", error);
-    return NextResponse.json({ error: "Failed to update user", detail: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update user", detail: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
   }
 }
 
 // DELETE user
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = params.id;
+    const { id } = await params;
     if (!id) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
 
     await prisma.user.delete({ where: { id: Number(id) } });
     return NextResponse.json({ message: "User deleted" });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("DELETE /api/users/[id] error:", error);
-    return NextResponse.json({ error: "Failed to delete user", detail: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to delete user", detail: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
   }
 }

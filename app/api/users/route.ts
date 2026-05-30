@@ -1,19 +1,41 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import prisma from '@/lib/prisma';
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 
 
-// GET all users
-export async function GET() {
+// GET all users (with pagination)
+export async function GET(request: Request) {
   try {
-    const users = await prisma.user.findMany({
-      include: { role: true },
-    });
+    const { searchParams } = new URL(request.url);
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50')));
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        include: { role: true },
+        skip,
+        take: limit,
+        orderBy: { id: 'asc' },
+      }),
+      prisma.user.count(),
+    ]);
 
     const safeUsers = users.map(({ password, ...rest }) => rest);
 
-    return NextResponse.json(safeUsers);
+    return NextResponse.json({
+      data: safeUsers,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+      },
+    });
   } catch (error) {
     console.error("GET /api/users error:", error);
     return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
@@ -62,11 +84,11 @@ export async function POST(request: Request) {
     const { password, ...safeUser } = user;
     console.log("User created:", safeUser);
     return NextResponse.json(safeUser);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("POST /api/users error:", error);
     return NextResponse.json({
       error: "Failed to create user",
-      details: error.message
+      details: error instanceof Error ? error.message : "Unknown error"
     }, { status: 500 });
   }
 }

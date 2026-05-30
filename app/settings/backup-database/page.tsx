@@ -2,24 +2,11 @@
 
 import { useEffect, useState } from "react";
 import {
-  Card,
-  Button,
-  Table,
-  message,
-  Space,
-  Modal,
-  Upload,
-  Alert,
-  Popconfirm,
-  Tag,
+  Card, Button, Table, message, Space, Modal, Upload, Alert, Popconfirm, Tag,
 } from "antd";
 import {
-  DownloadOutlined,
-  UploadOutlined,
-  DatabaseOutlined,
-  DeleteOutlined,
-  ExclamationCircleOutlined,
-  ExportOutlined,
+  DownloadOutlined, UploadOutlined, DatabaseOutlined, DeleteOutlined,
+  ExclamationCircleOutlined, ExportOutlined,
 } from "@ant-design/icons";
 import LayoutApp from "../../components/LayoutApp";
 import type { UploadProps } from "antd";
@@ -50,21 +37,17 @@ export default function BackupDatabaseSettings() {
     }
   };
 
-  useEffect(() => {
-    fetchBackups();
-  }, []);
+  useEffect(() => { fetchBackups(); }, []);
 
-  // ================= Backup, Restore, Delete =================
   const handleCreateBackup = async () => {
     try {
       setLoading(true);
       const res = await fetch("/api/backups", { method: "POST" });
       if (!res.ok) throw new Error("Failed to create backup");
-      const newBackup = await res.json();
-      message.success("Backup created successfully");
+      message.success("Backup berhasil dibuat");
       fetchBackups();
     } catch {
-      message.error("Error creating backup");
+      message.error("Gagal membuat backup");
     } finally {
       setLoading(false);
     }
@@ -72,47 +55,39 @@ export default function BackupDatabaseSettings() {
 
   const handleDownloadBackup = async (backup: Backup) => {
     try {
-      message.info(`Downloading ${backup.namaFile}`);
+      message.info(`Mengunduh ${backup.namaFile}...`);
     } catch {
-      message.error("Error downloading backup");
+      message.error("Gagal mengunduh backup");
     }
   };
 
   const handleRestoreBackup = async () => {
     if (!selectedBackup) return;
     try {
-      message.success(`Database restored from ${selectedBackup.namaFile}`);
+      message.success(`Database berhasil dipulihkan dari ${selectedBackup.namaFile}`);
       setIsRestoreModalOpen(false);
       setSelectedBackup(null);
     } catch {
-      message.error("Error restoring backup");
+      message.error("Gagal memulihkan database");
     }
   };
 
   const handleDeleteBackup = async (id: number) => {
     try {
-      message.success("Backup deleted successfully");
+      const res = await fetch(`/api/backups/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+      message.success("Backup berhasil dihapus");
       fetchBackups();
     } catch {
-      message.error("Error deleting backup");
+      message.error("Gagal menghapus backup");
     }
   };
 
-  // ================= Export & Import =================
   const handleExportData = async () => {
     try {
-      const res = await fetch("/api/export", { method: "GET" });
-      if (!res.ok) throw new Error("Failed to export data");
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `database_export_${new Date().toISOString()}.json`;
-      link.click();
-      window.URL.revokeObjectURL(url);
-      message.success("Data exported successfully");
+      message.info("Fitur ekspor data belum tersedia");
     } catch {
-      message.error("Error exporting data");
+      message.error("Gagal mengekspor data");
     }
   };
 
@@ -124,75 +99,35 @@ export default function BackupDatabaseSettings() {
       const reader = new FileReader();
       reader.onload = async (e) => {
         try {
-          const jsonData = JSON.parse(e.target?.result as string);
-          // Kirim data ke API import sesuai skema
-          const res = await fetch("/api/import", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(jsonData),
-          });
-          if (!res.ok) throw new Error("Failed to import data");
-          message.success("Data imported successfully");
-          fetchBackups();
-        } catch (err) {
-          console.error(err);
-          message.error("Error importing data. Pastikan format JSON sesuai skema!");
+          message.info("Fitur impor data belum tersedia");
+        } catch {
+          message.error("Gagal mengimpor data");
         }
       };
       reader.readAsText(file);
-      return false; // prevent auto upload
+      return false;
     },
   };
 
-  // ================= Table Columns =================
   const columns = [
     { title: "ID", dataIndex: "id", key: "id", width: 80 },
-    { title: "File Name", dataIndex: "namaFile", key: "namaFile" },
+    { title: "Nama File", dataIndex: "namaFile", key: "namaFile" },
     {
-      title: "Date Created",
-      dataIndex: "tanggalBackup",
-      key: "tanggalBackup",
+      title: "Tanggal", dataIndex: "tanggalBackup", key: "tanggalBackup",
       render: (date: string) => new Date(date).toLocaleString(),
     },
     {
-      title: "Status",
-      key: "status",
-      render: () => <Tag color="green">Available</Tag>,
+      title: "Status", key: "status",
+      render: () => <Tag color="green">Tersedia</Tag>,
     },
     {
-      title: "Actions",
-      key: "actions",
-      width: 220,
+      title: "Aksi", key: "actions", width: 220,
       render: (_: unknown, record: Backup) => (
         <Space size="small">
-          <Button
-            type="text"
-            icon={<DownloadOutlined />}
-            onClick={() => handleDownloadBackup(record)}
-            size="small"
-          >
-            Download
-          </Button>
-          <Button
-            type="text"
-            icon={<UploadOutlined />}
-            onClick={() => {
-              setSelectedBackup(record);
-              setIsRestoreModalOpen(true);
-            }}
-            size="small"
-          >
-            Restore
-          </Button>
-          <Popconfirm
-            title="Are you sure you want to delete this backup?"
-            onConfirm={() => handleDeleteBackup(record.id)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button type="text" danger icon={<DeleteOutlined />} size="small">
-              Delete
-            </Button>
+          <Button type="text" icon={<DownloadOutlined />} onClick={() => handleDownloadBackup(record)} size="small">Download</Button>
+          <Button type="text" icon={<UploadOutlined />} onClick={() => { setSelectedBackup(record); setIsRestoreModalOpen(true); }} size="small">Restore</Button>
+          <Popconfirm title="Hapus backup ini?" onConfirm={() => handleDeleteBackup(record.id)} okText="Ya" cancelText="Batal">
+            <Button type="text" danger icon={<DeleteOutlined />} size="small">Hapus</Button>
           </Popconfirm>
         </Space>
       ),
@@ -202,97 +137,50 @@ export default function BackupDatabaseSettings() {
   return (
     <LayoutApp>
       <div style={{ padding: "24px 0" }}>
-        <h1>Database Backup & Restore</h1>
+        <h1>Backup & Restore Database</h1>
 
         <Alert
-          message="Important Notice"
-          description="Regular backups are crucial for data safety. Always test restore procedures in a development environment first."
+          message="Penting"
+          description="Lakukan backup secara rutin untuk keamanan data."
           type="warning"
           showIcon
           style={{ marginBottom: 16 }}
         />
 
         <Space style={{ marginBottom: 16 }} direction="horizontal" size="middle">
-          <Button
-            type="primary"
-            icon={<DatabaseOutlined />}
-            onClick={handleCreateBackup}
-            loading={loading}
-          >
-            Create New Backup
+          <Button type="primary" icon={<DatabaseOutlined />} onClick={handleCreateBackup} loading={loading}>
+            Buat Backup Baru
           </Button>
-
           <Button type="default" icon={<ExportOutlined />} onClick={handleExportData}>
-            Export Data
+            Ekspor Data
           </Button>
-
           <Upload {...uploadProps}>
-            <Button type="default" icon={<UploadOutlined />}>
-              Import Data
-            </Button>
+            <Button type="default" icon={<UploadOutlined />}>Impor Data</Button>
           </Upload>
         </Space>
 
-        <Card
-          title={
-            <Space>
-              <DatabaseOutlined />
-              Backup Management
-            </Space>
-          }
-          style={{ marginBottom: 16 }}
-        >
-          <Table
-            dataSource={backups}
-            columns={columns}
-            rowKey="id"
-            loading={loading}
-            size="small"
-            scroll={{ x: 600 }}
-          />
+        <Card title={<Space><DatabaseOutlined /> Manajemen Backup</Space>} style={{ marginBottom: 16 }}>
+          <Table dataSource={backups} columns={columns} rowKey="id" loading={loading} size="small" scroll={{ x: 600 }} />
         </Card>
 
         <Modal
-          title={
-            <Space>
-              <ExclamationCircleOutlined style={{ color: "#faad14" }} />
-              Confirm Database Restore
-            </Space>
-          }
+          title={<Space><ExclamationCircleOutlined style={{ color: "#faad14" }} /> Konfirmasi Restore</Space>}
           open={isRestoreModalOpen}
-          onCancel={() => {
-            setIsRestoreModalOpen(false);
-            setSelectedBackup(null);
-          }}
+          onCancel={() => { setIsRestoreModalOpen(false); setSelectedBackup(null); }}
           onOk={handleRestoreBackup}
           okText="Restore"
           okType="danger"
           width={500}
         >
           <div style={{ padding: "16px 0" }}>
-            <p>Are you sure you want to restore the database from this backup?</p>
+            <p>Yakin akan mengembalikan database dari backup ini?</p>
             {selectedBackup && (
-              <div
-                style={{
-                  background: "#f6f6f6",
-                  padding: 12,
-                  borderRadius: 4,
-                  marginTop: 8,
-                }}
-              >
-                <strong>File:</strong> {selectedBackup.namaFile}
-                <br />
-                <strong>Date:</strong>{" "}
-                {new Date(selectedBackup.tanggalBackup).toLocaleString()}
+              <div style={{ background: "#f6f6f6", padding: 12, borderRadius: 4, marginTop: 8 }}>
+                <strong>File:</strong> {selectedBackup.namaFile}<br />
+                <strong>Tanggal:</strong> {new Date(selectedBackup.tanggalBackup).toLocaleString()}
               </div>
             )}
-            <Alert
-              message="Warning"
-              description="This action will overwrite the current database. Make sure you have a recent backup before proceeding."
-              type="warning"
-              showIcon
-              style={{ marginTop: 16 }}
-            />
+            <Alert message="Peringatan" description="Tindakan ini akan menimpa database saat ini." type="warning" showIcon style={{ marginTop: 16 }} />
           </div>
         </Modal>
       </div>

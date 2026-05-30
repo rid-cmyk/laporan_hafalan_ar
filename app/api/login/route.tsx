@@ -1,17 +1,50 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+import prisma from "@/lib/prisma";
 import { SignJWT } from "jose";
+import { z } from "zod";
 
-const prisma = new PrismaClient();
+// Konfigurasi Rate Limiting menggunakan Upstash Redis
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(5, "10 s"), // 5 permintaan per 10 detik
+  analytics: true,
+  prefix: "@upstash/ratelimit",
+});
+
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || "mysecretkey");
 
-export async function POST(req: Request) {
-  try {
-    const { passCode } = await req.json();
+const LoginSchema = z.object({
+  passCode: z.string().min(1, { message: "Passcode wajib diisi" }),
+});
 
-    if (!passCode) {
-      return NextResponse.json({ error: "Passcode required" }, { status: 400 });
+export async function POST(req: Request) {
+  // Ambil IP address dari header atau fallback ke "127.0.0.1"
+  const ip = req.headers.get("x-forwarded-for") ?? "127.0.0.1";
+
+  try {
+    // Terapkan rate limiting berdasarkan IP
+    const { success, limit, remaining, reset } = await ratelimit.limit(ip);
+
+    if (!success) {
+      return NextResponse.json(
+        { error: "Terlalu banyak permintaan. Silakan coba lagi nanti." },
+        { status: 429 }
+      );
     }
+
+    const body = await req.json();
+
+    const validation = LoginSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: "Permintaan tidak valid", details: validation.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const { passCode } = validation.data;
 
     const user = await prisma.user.findFirst({
       where: { passCode },
@@ -19,10 +52,9 @@ export async function POST(req: Request) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: "Invalid passcode" }, { status: 401 });
+      return NextResponse.json({ error: "Passcode tidak valid" }, { status: 401 });
     }
 
-    // ✅ Create JWT token using jose (Edge-compatible)
     const token = await new SignJWT({
       id: user.id,
       namaLengkap: user.namaLengkap,
@@ -32,9 +64,8 @@ export async function POST(req: Request) {
       .setExpirationTime("10m")
       .sign(secret);
 
-    // ✅ Set cookie
     const res = NextResponse.json({
-      message: "Login success",
+      message: "Login berhasil",
       user: { namaLengkap: user.namaLengkap, role: user.role.name },
     });
 
@@ -43,12 +74,12 @@ export async function POST(req: Request) {
       sameSite: "strict",
       secure: process.env.NODE_ENV === "production",
       path: "/",
-      maxAge: 60 * 10, // 10 minutes
+      maxAge: 60 * 10, // 10 menit
     });
 
     return res;
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error("Error di API Login:", err);
+    return NextResponse.json({ error: "Terjadi kesalahan internal" }, { status: 500 });
   }
 }

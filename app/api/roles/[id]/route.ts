@@ -3,9 +3,9 @@ import prisma from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 
 // UPDATE role
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = params.id;
+    const { id } = await params;
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
@@ -36,16 +36,16 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     });
 
     return NextResponse.json(role);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('PUT /api/roles/[id] error:', error);
-    return NextResponse.json({ error: 'Failed to update role', detail: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update role', detail: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
   }
 }
 
 // DELETE role
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = params.id;
+    const { id } = await params;
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
@@ -63,11 +63,11 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     return NextResponse.json({
       message: 'Role and associated users deleted successfully'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('DELETE /api/roles/[id] error:', error);
     return NextResponse.json({
       error: 'Failed to delete role',
-      detail: error.message
+      detail: error instanceof Error ? error.message : "Unknown error"
     }, { status: 500 });
   }
 }

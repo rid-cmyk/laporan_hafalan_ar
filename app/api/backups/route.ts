@@ -1,10 +1,5 @@
 import prisma from '@/lib/prisma';
 import { NextResponse } from "next/server";
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import path from 'path';
-
-const execAsync = promisify(exec);
 
 export async function GET() {
   try {
@@ -12,7 +7,11 @@ export async function GET() {
       orderBy: { tanggalBackup: 'desc' },
     });
 
-    return NextResponse.json(backups);
+    return NextResponse.json(backups, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
   } catch (error) {
     console.error("GET /api/backups error:", error);
     return NextResponse.json({ error: "Failed to fetch backups" }, { status: 500 });

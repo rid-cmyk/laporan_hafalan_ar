@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import LoaderWrapper from "./Loader";
-
 
 export const metadata: Metadata = {
   title: "ArHapalan Apps",
@@ -15,12 +13,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className="bg-background text-foreground font-sans antialiased"
-      >
-        <LoaderWrapper >
+      <body className="bg-background text-foreground font-sans antialiased">
         {children}
-        </LoaderWrapper>
       </body>
     </html>
   );

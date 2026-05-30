@@ -20,7 +20,11 @@ export async function GET() {
     userCount: role._count.users
   }));
 
-  return NextResponse.json(rolesWithCount);
+  return NextResponse.json(rolesWithCount, {
+    headers: {
+      'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+    },
+  });
 }
 
 // CREATE role
@@ -55,11 +59,11 @@ export async function POST(request: Request) {
 
     console.log("Role created:", role);
     return NextResponse.json(role);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("POST /api/roles error:", error);
     return NextResponse.json({
       error: "Failed to create role",
-      details: error.message
+      details: error instanceof Error ? error.message : "Unknown error"
     }, { status: 500 });
   }
 }

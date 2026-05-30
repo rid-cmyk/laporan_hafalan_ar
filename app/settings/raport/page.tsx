@@ -1,7 +1,8 @@
 "use client";
 
-import { Card, Form, Input, Button, message, Select, Upload, Space } from "antd";
-import { UploadOutlined, SaveOutlined } from "@ant-design/icons";
+import { useEffect, useState } from "react";
+import { Card, Form, Input, Button, message, Select, Space } from "antd";
+import { SaveOutlined } from "@ant-design/icons";
 import LayoutApp from "../../components/LayoutApp";
 
 const { TextArea } = Input;
@@ -9,34 +10,51 @@ const { Option } = Select;
 
 export default function RaportSettings() {
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = async (values: any) => {
-    try {
-      // Here you would save to database or API
-      console.log("Saving raport settings:", values);
-      message.success("Raport settings saved successfully");
-    } catch (error) {
-      message.error("Failed to save settings");
-    }
-  };
-
-  const uploadProps = {
-    name: "file",
-    action: "/api/upload", // Replace with your upload endpoint
-    onChange(info: any) {
-      if (info.file.status === "done") {
-        message.success(`${info.file.name} uploaded successfully`);
-      } else if (info.file.status === "error") {
-        message.error(`${info.file.name} upload failed.`);
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch("/api/settings/raport");
+        if (res.ok) {
+          const data = await res.json();
+          if (Object.keys(data).length > 0) {
+            form.setFieldsValue(data);
+          }
+        }
+      } catch {
+        // ignore
+      } finally {
+        setLoading(false);
       }
-    },
+    };
+    fetchSettings();
+  }, [form]);
+
+  const handleSave = async (values: Record<string, unknown>) => {
+    try {
+      setSaving(true);
+      const res = await fetch("/api/settings/raport", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      if (!res.ok) throw new Error("Failed to save");
+      message.success("Pengaturan raport berhasil disimpan");
+    } catch {
+      message.error("Gagal menyimpan pengaturan");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <LayoutApp>
       <div style={{ padding: "24px 0" }}>
-        <h1>Raport Settings</h1>
-        <Card title="Raport Configuration" style={{ marginTop: 16 }}>
+        <h1>Pengaturan Raport</h1>
+        <Card title="Konfigurasi Raport" style={{ marginTop: 16 }}>
           <Form
             form={form}
             layout="vertical"
@@ -44,61 +62,42 @@ export default function RaportSettings() {
             initialValues={{
               templateType: "standard",
               headerText: "Laporan Hasil Belajar",
-              footerText: "Approved by: ________________",
+              footerText: "Disetujui oleh: ________________",
             }}
           >
             <Form.Item
-              label="Raport Template Type"
+              label="Tipe Template Raport"
               name="templateType"
-              rules={[{ required: true, message: "Please select template type" }]}
+              rules={[{ required: true, message: "Pilih tipe template" }]}
             >
-              <Select placeholder="Select template type">
-                <Option value="standard">Standard Template</Option>
-                <Option value="custom">Custom Template</Option>
-                <Option value="minimal">Minimal Template</Option>
+              <Select placeholder="Pilih tipe template">
+                <Option value="standard">Standard</Option>
+                <Option value="custom">Kustom</Option>
+                <Option value="minimal">Minimal</Option>
               </Select>
             </Form.Item>
 
             <Form.Item
-              label="Header Text"
+              label="Teks Header"
               name="headerText"
-              rules={[{ required: true, message: "Please enter header text" }]}
+              rules={[{ required: true, message: "Masukkan teks header" }]}
             >
-              <Input placeholder="Enter raport header text" />
+              <Input placeholder="Teks header raport" />
             </Form.Item>
 
-            <Form.Item
-              label="Footer Text"
-              name="footerText"
-            >
-              <Input placeholder="Enter raport footer text" />
+            <Form.Item label="Teks Footer" name="footerText">
+              <Input placeholder="Teks footer raport" />
             </Form.Item>
 
-            <Form.Item
-              label="School Logo"
-              name="logo"
-            >
-              <Upload {...uploadProps}>
-                <Button icon={<UploadOutlined />}>Upload Logo</Button>
-              </Upload>
-            </Form.Item>
-
-            <Form.Item
-              label="Additional Notes"
-              name="notes"
-            >
-              <TextArea
-                rows={4}
-                placeholder="Enter any additional notes for raport generation"
-              />
+            <Form.Item label="Catatan Tambahan" name="notes">
+              <TextArea rows={4} placeholder="Catatan tambahan untuk raport" />
             </Form.Item>
 
             <Form.Item>
               <Space>
-                <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
-                  Save Settings
+                <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={saving}>
+                  Simpan Pengaturan
                 </Button>
-                <Button>Reset to Default</Button>
               </Space>
             </Form.Item>
           </Form>
